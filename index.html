@@ -37,7 +37,7 @@
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-display);font-size:15px;line-height:1.55}
-button,input{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 .wrap{max-width:1060px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
 
@@ -212,6 +212,26 @@ p{margin:0}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--pink);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-1px;margin-right:8px}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+/* scan reader */
+.reader{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;align-items:start}
+@media (max-width:820px){.reader{grid-template-columns:minmax(0,1fr)}}
+.reader textarea{width:100%;background:var(--screen);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;font-size:14px}
+.reader select{background:var(--screen);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs img{width:120px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--screen)}
+.res-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.conf{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:4px 10px;border:1px solid var(--line)}
+.conf.low{color:var(--bad);border-color:var(--bad)}.conf.medium{color:var(--amber);border-color:var(--amber)}.conf.high{color:var(--ok);border-color:var(--ok)}
+.res-sum{font-size:18px;font-weight:600;line-height:1.4}
+.res-sec{display:flex;flex-direction:column;gap:6px}
+.res-sec h3{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0;font-weight:600}
+.res-sec ul,.res-sec ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.res-sec li b{color:var(--fg)}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap}
+.tag{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px}
+.tp{border-left:2px solid var(--pink);padding-left:12px}
+.tp p{font-family:var(--f-hand);font-size:24px;line-height:1.2;color:var(--pink)}
 /* lock */
 .lock{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;overflow-y:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .lock-box{margin:auto;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
@@ -248,7 +268,7 @@ p{margin:0}
   <header>
     <div class="dicom"><span>Pt: Nataly</span><span>Op: Mohamed</span><span>Exam: Final semester</span><span id="hdrDate"></span></div>
     <h1>For <em>Nataly</em>, future sonographer</h1>
-    <p class="sub">Eight scans to find, a countdown to the finish line, study questions for the boring nights, and a checklist to tick off.</p>
+    <p class="sub">Eight scans to find, a countdown to the finish line, study help for the boring nights, a scan reader, and a checklist to tick off.</p>
   </header>
 
   <nav class="tabs" role="tablist">
@@ -256,6 +276,7 @@ p{margin:0}
     <button class="tab" role="tab" id="t-scan" data-tab="scan" aria-selected="false">Scan game</button>
     <button class="tab" role="tab" id="t-countdown" data-tab="countdown" aria-selected="false">Countdown</button>
     <button class="tab" role="tab" id="t-study" data-tab="study" aria-selected="false">Study mode</button>
+    <button class="tab" role="tab" id="t-reader" data-tab="reader" aria-selected="false">Scan reader</button>
     <button class="tab" role="tab" id="t-checklist" data-tab="checklist" aria-selected="false">Checklist</button>
   </nav>
 
@@ -360,6 +381,27 @@ p{margin:0}
     </div>
   </section>
 
+  <!-- SCAN READER -->
+  <section id="p-reader" role="tabpanel" aria-labelledby="t-reader" hidden>
+    <div class="reader">
+      <div class="panel">
+        <p class="eyebrow">Scan reader</p>
+        <h2>Get a second look at a scan</h2>
+        <p class="small">Upload a photo or screenshot of an ultrasound. The AI describes what it sees, possible findings, and what you could do next. It's a study aid and it can be wrong, so never use it for a real patient decision.</p>
+        <label class="drop" for="scanFile" id="scanDrop"><strong>Choose a scan image</strong><span>or drop it here</span><span class="small">Up to 2 images. Crop out patient names and IDs first.</span></label>
+        <input type="file" id="scanFile" accept="image/*" multiple class="sr">
+        <div class="thumbs" id="scanThumbs"></div>
+        <div class="field"><label for="scanRegion" class="small">Body region</label>
+          <select id="scanRegion"><option>Not sure</option><option>Thyroid / neck</option><option>Breast</option><option>Scrotum / testis</option><option>Carotid / vascular</option><option>Lower limb veins</option><option>MSK</option><option>Abdomen</option><option>Pelvis / OB-GYN</option><option>Other</option></select></div>
+        <div class="field"><label for="scanNote" class="small">Your notes or question (optional)</label>
+          <textarea id="scanNote" rows="3" placeholder="e.g. I think this is a complex cyst. Am I right?"></textarea></div>
+        <div class="row"><button class="btn primary" id="readScan">Read my scan</button></div>
+        <p class="status" id="scanStatus" aria-live="polite"></p>
+      </div>
+      <div class="panel" id="scanResult" hidden></div>
+    </div>
+  </section>
+
   <!-- CHECKLIST -->
   <section id="p-checklist" role="tabpanel" aria-labelledby="t-checklist" hidden>
     <div class="todo">
@@ -447,7 +489,7 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.
 $('#hdrDate').textContent=new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
 
 /* ---------- tabs ---------- */
-const TABS=['home','scan','countdown','study','checklist'];
+const TABS=['home','scan','countdown','study','reader','checklist'];
 function showTab(t){if(!TABS.includes(t))t='home';if(t==='home'&&typeof renderHome==='function')renderHome();TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab;showTab(b.dataset.tab)}));
 window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));if(location.hash==='#celebrate')gradCheck()});
@@ -770,6 +812,7 @@ function renderHome(){const now=new Date(),h=now.getHours();
    ['US-001','Scan game','Find '+LV.length+' structures on real-looking scans',all?['Complete','done']:found?[found+' of '+LV.length+' found','go']:['Start here','new'],()=>go('scan')],
    ['US-002','Countdown','Days to the finish line, plus a new note daily',[days>0?days+' days left':'Done!','go'],()=>go('countdown')],
    ['US-003','Study mode','Practice set, or a quiz made from your notes',['Ready','go'],()=>go('study')],
+   ['US-006','Scan reader','Upload an ultrasound and get a second look',['New','new'],()=>go('reader')],
    ['US-004','Checklist','Exams and comps to tick off',[td+' of '+todos.length+' done',td===todos.length&&todos.length?'done':'go'],()=>go('checklist')],
    ['US-005','Your report','Official findings, signed by Mohamed',all?['Ready to read','done']:['After the scans',''],all?openReport:null]
   ];
@@ -854,6 +897,38 @@ $('#makeQuiz').onclick=async()=>{const text=(pending.text+'\n'+$('#notePaste').v
   catch(err){gst(err.message||'Something went wrong. Try again.','err')}
   finally{btn.disabled=false}};
 $('#redoSaved').onclick=()=>{if(genDeck&&genDeck.length){gst('');startDeck(genDeck)}};
+/* ---------- scan reader ---------- */
+let scanImgs=[];
+function sst(html,cls){const g=$('#scanStatus');g.className='status'+(cls?' '+cls:'');g.innerHTML=html}
+async function addScans(files){files=[...files].filter(f=>f.type.startsWith('image/')).slice(0,2);if(!files.length){sst('Choose an image file, like a JPG or PNG.','err');return}
+  try{scanImgs=[];for(const f of files)scanImgs.push(await imgData(f));const th=$('#scanThumbs');th.innerHTML='';scanImgs.forEach((u,i)=>{const im=document.createElement('img');im.src=u;im.alt='Scan image '+(i+1);th.appendChild(im)});
+    sst('Ready. Add the region or a question if you like, then tap Read my scan.')}catch(e){sst(e.message,'err')}}
+$('#scanFile').addEventListener('change',e=>{addScans(e.target.files);e.target.value=''});
+const sdrop=$('#scanDrop');['dragenter','dragover'].forEach(ev=>sdrop.addEventListener(ev,e=>{e.preventDefault();sdrop.classList.add('over')}));['dragleave','drop'].forEach(ev=>sdrop.addEventListener(ev,e=>{e.preventDefault();sdrop.classList.remove('over')}));sdrop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)addScans(e.dataTransfer.files)});
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e}
+function sec(title,node){const d=el('div','res-sec');d.append(el('h3',null,title),node);return d}
+function showRead(r){const box=$('#scanResult');box.innerHTML='';
+  const head=el('div','res-head');head.append(el('p','eyebrow','AI read'));const c=['low','medium','high'].includes(r.confidence)?r.confidence:'low';head.append(el('span','conf '+c,'Confidence: '+c));box.append(head);
+  box.append(el('p','res-sum',r.summary||''));
+  if(r.is_ultrasound===false){box.append(el('p','small','This doesn’t look like an ultrasound image. Try a clearer photo or a screenshot of the scan.'));box.hidden=false;return}
+  if(r.view)box.append(sec('View',el('p',null,r.view)));
+  if(r.structures&&r.structures.length){const t=el('div','tagrow');r.structures.forEach(x=>t.append(el('span','tag',x)));box.append(sec('Structures',t))}
+  if(r.findings&&r.findings.length){const u=el('ul');r.findings.forEach(f=>{const li=el('li');li.append(el('b',null,f.finding),document.createTextNode(': '+f.description));u.append(li)});box.append(sec('Findings',u))}
+  if(r.differentials&&r.differentials.length){const o=el('ol');r.differentials.forEach(x=>o.append(el('li',null,x)));box.append(sec('Consider, most likely first',o))}
+  if(r.next_steps&&r.next_steps.length){const u=el('ul');r.next_steps.forEach(x=>u.append(el('li',null,x)));box.append(sec('What to do next',u))}
+  if(r.teaching_point){const d=el('div','tp');d.append(el('p',null,r.teaching_point));box.append(sec('Remember',d))}
+  if(r.image_limits&&!/^none\.?$/i.test(r.image_limits))box.append(sec('Image limits',el('p','small',r.image_limits)));
+  box.append(el('p','small','Study aid only. AI can miss things or be confidently wrong. Check with your instructor or the reading radiologist.'));
+  box.hidden=false}
+$('#readScan').onclick=async()=>{if(!scanImgs.length){sst('Add a photo or screenshot of the scan first.','err');return}
+  const btn=$('#readScan');btn.disabled=true;sst('<span class="spin"></span>Looking at your scan. This takes about 15 to 40 seconds…');
+  try{const r=await fetch('/api/scan',{method:'POST',headers:{'content-type':'application/json','x-nataly-pass':store.get('nataly-pass','teezakb5at')},body:JSON.stringify({images:scanImgs,region:$('#scanRegion').value,note:$('#scanNote').value})});
+    if(r.status===404||r.status===405)throw new Error('The scan reader only works on the live website, not in this preview.');
+    let data={};try{data=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(data.error||'The scan reader had a problem ('+r.status+'). Try again.');
+    sst('Done.','ok');showRead(data.result);$('#scanResult').scrollIntoView({behavior:'smooth',block:'start'})}
+  catch(err){sst(err.message||'Something went wrong. Try again.','err')}
+  finally{btn.disabled=false}};
 function showQ(){if(qi>=deck.length){deck=shuffle(deck);qi=0}const q=deck[qi];
   $('#qTopic').textContent=q[0];$('#qText').textContent=q[1];$('#score').textContent=right+' / '+total+' this session';
   const ex=$('#explain');ex.hidden=true;ex.innerHTML='';$('#qNext').hidden=true;

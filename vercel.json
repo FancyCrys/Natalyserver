@@ -1,5 +1,6 @@
 {
   "functions": {
-    "api/quiz.js": { "maxDuration": 60 }
+    "api/quiz.js": { "maxDuration": 60 },
+    "api/scan.js": { "maxDuration": 60 }
   }
 }
