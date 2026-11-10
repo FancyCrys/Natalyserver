@@ -1,0 +1,13 @@
+{
+  "name": "For Nataly",
+  "short_name": "Nataly",
+  "description": "Something from Mohamed for your final semester.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e1116",
+  "theme_color": "#0e1116",
+  "icons": [
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
