@@ -173,6 +173,29 @@ p{margin:0}
 .report .btn{background:#fff;border-color:var(--rep-line);color:var(--rep-ink)}
 .report .btn.primary{background:var(--rep-accent);border-color:var(--rep-accent);color:#fff}
 
+/* home */
+.home{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:780px){.home{grid-template-columns:minmax(0,1fr)}}
+.hello{display:flex;flex-direction:column;gap:8px;grid-column:1/-1}
+.hello h2{font-size:clamp(28px,6vw,40px);letter-spacing:-.02em}
+.hello h2 em{font-style:normal;color:var(--pink)}
+.hello p{color:var(--muted);max-width:60ch}
+.hello b{color:var(--amber);font-family:var(--f-mono);font-weight:600}
+.wl{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.wl-head{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;padding:10px 16px;background:var(--screen);font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.wl-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;text-align:left;background:transparent;border:0;border-top:1px solid var(--line);padding:14px 16px;cursor:pointer}
+.wl-row:hover:not([disabled]){background:var(--panel2)}
+.wl-row[disabled]{cursor:not-allowed;opacity:.55}
+.wl-id{font-family:var(--f-mono);font-size:12px;color:var(--amber)}
+.wl-t{display:flex;flex-direction:column;gap:2px;min-width:0}
+.wl-t strong{font-size:15px}
+.wl-t span{font-size:13px;color:var(--muted)}
+.chip-s{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;border-radius:999px;padding:4px 10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip-s.go{border-color:var(--amber);color:var(--amber)}
+.chip-s.done{border-color:var(--ok);color:var(--ok)}
+.chip-s.new{border-color:var(--pink);color:var(--pink)}
+@media (max-width:460px){.wl-head,.wl-row{grid-template-columns:minmax(0,1fr) auto}.wl-id{display:none}.wl-head span:first-child{display:none}}
+.home .note blockquote{font-size:clamp(24px,4vw,30px)}
 /* lock */
 .lock{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;overflow-y:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .lock-box{margin:auto;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
@@ -213,14 +236,35 @@ p{margin:0}
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" id="t-scan" data-tab="scan" aria-selected="true">Scan game</button>
+    <button class="tab" role="tab" id="t-home" data-tab="home" aria-selected="true">Home</button>
+    <button class="tab" role="tab" id="t-scan" data-tab="scan" aria-selected="false">Scan game</button>
     <button class="tab" role="tab" id="t-countdown" data-tab="countdown" aria-selected="false">Countdown</button>
     <button class="tab" role="tab" id="t-study" data-tab="study" aria-selected="false">Study mode</button>
     <button class="tab" role="tab" id="t-checklist" data-tab="checklist" aria-selected="false">Checklist</button>
   </nav>
 
+  <!-- HOME -->
+  <section id="p-home" role="tabpanel" aria-labelledby="t-home">
+    <div class="home">
+      <div class="hello">
+        <p class="eyebrow" id="homeEyebrow">Worklist</p>
+        <h2 id="homeHello">Hi, <em>Nataly</em>.</h2>
+        <p id="homeSub"></p>
+      </div>
+      <div class="wl" role="list" aria-label="Your worklist">
+        <div class="wl-head" aria-hidden="true"><span>Acc #</span><span>Exam</span><span>Status</span></div>
+        <div id="wlRows"></div>
+      </div>
+      <div class="note">
+        <p class="eyebrow" id="homeNoteLabel">Today's note</p>
+        <blockquote id="homeNote"></blockquote>
+        <span class="sig">Mohamed</span>
+      </div>
+    </div>
+  </section>
+
   <!-- SCAN -->
-  <section id="p-scan" role="tabpanel" aria-labelledby="t-scan">
+  <section id="p-scan" role="tabpanel" aria-labelledby="t-scan" hidden>
     <div class="scan">
       <div class="monitor">
         <canvas id="us" width="960" height="768" aria-label="Ultrasound image. Tap the structure you are asked to find."></canvas>
@@ -371,8 +415,8 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.
 $('#hdrDate').textContent=new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
 
 /* ---------- tabs ---------- */
-const TABS=['scan','countdown','study','checklist'];
-function showTab(t){if(!TABS.includes(t))t='scan';TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
+const TABS=['home','scan','countdown','study','checklist'];
+function showTab(t){if(!TABS.includes(t))t='home';if(t==='home'&&typeof renderHome==='function')renderHome();TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab;showTab(b.dataset.tab)}));
 window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));
 /* ---------- lock ---------- */
@@ -686,6 +730,28 @@ function renderTodos(focusId){const ul=$('#todoList');ul.innerHTML='';todos.forE
   if(focusId){const f=document.getElementById(focusId);if(f)f.focus()}}
 $('#todoForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#todoInput').value.trim();if(!v)return;todos.push({t:v,d:false});saveT();$('#todoInput').value='';renderTodos()});
 renderTodos();
+
+/* ---------- home ---------- */
+function go(t){location.hash=t;showTab(t);window.scrollTo(0,0)}
+function renderHome(){const now=new Date(),h=now.getHours();
+  const greet=h<5?'Still up':h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  $('#homeHello').innerHTML='';$('#homeHello').append(greet+', ');const em=document.createElement('em');em.textContent='Nataly';$('#homeHello').append(em,'.');
+  $('#homeEyebrow').textContent='Worklist · '+now.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});
+  const days=Math.ceil((target()-now)/864e5);const sub=$('#homeSub');sub.innerHTML='';
+  if(days>0){const b=document.createElement('b');b.textContent=days+(days===1?' day':' days');sub.append(b,' until the final semester is done. Pick where you want to start.')}else sub.textContent='The final semester is done. Everything here is yours to keep.';
+  const t=new Date();t.setHours(0,0,0,0);const n=Math.max(0,Math.round((t-NOTE0)/864e5));$('#homeNoteLabel').textContent='Today’s note · #'+(n+1);
+  const q=$('#homeNote');q.innerHTML='';NOTES[n%NOTES.length].split('\n').forEach((l,i)=>{if(i)q.appendChild(document.createElement('br'));q.appendChild(document.createTextNode(l))});
+  const found=done.filter(Boolean).length,all=found===LV.length,td=todos.filter(x=>x.d).length;
+  const rows=[
+   ['US-001','Scan game','Find '+LV.length+' structures on real-looking scans',all?['Complete','done']:found?[found+' of '+LV.length+' found','go']:['Start here','new'],()=>go('scan')],
+   ['US-002','Countdown','Days to the finish line, plus a new note daily',[days>0?days+' days left':'Done!','go'],()=>go('countdown')],
+   ['US-003','Study mode',Q.length+' questions: vascular, small parts, MSK',['Ready','go'],()=>go('study')],
+   ['US-004','Checklist','Exams and comps to tick off',[td+' of '+todos.length+' done',td===todos.length&&todos.length?'done':'go'],()=>go('checklist')],
+   ['US-005','Your report','Official findings, signed by Mohamed',all?['Ready to read','done']:['After the scans',''],all?openReport:null]
+  ];
+  const el=$('#wlRows');el.innerHTML='';rows.forEach(r=>{const b=document.createElement('button');b.className='wl-row';b.setAttribute('role','listitem');if(!r[4])b.disabled=true;else b.onclick=r[4];
+    b.innerHTML='<span class="wl-id"></span><span class="wl-t"><strong></strong><span></span></span><span class="chip-s"></span>';
+    b.children[0].textContent=r[0];b.children[1].children[0].textContent=r[1];b.children[1].children[1].textContent=r[2];b.children[2].textContent=r[3][0];if(r[3][1])b.children[2].classList.add(r[3][1]);el.appendChild(b)})}
 
 /* ---------- study ---------- */
 const Q=[
