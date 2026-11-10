@@ -418,15 +418,7 @@ $('#hdrDate').textContent=new Date().toLocaleDateString(undefined,{day:'2-digit'
 const TABS=['home','scan','countdown','study','checklist'];
 function showTab(t){if(!TABS.includes(t))t='home';if(t==='home'&&typeof renderHome==='function')renderHome();TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab;showTab(b.dataset.tab)}));
-window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));
-/* ---------- lock ---------- */
-const okAns=a=>{const n=a.toLowerCase().replace(/[^a-z0-9]/g,'');return /^t[ie]+[sz]+a*k+b+(5|kh|k|h)a+t+$/.test(n)};
-let tries=0;
-function unlock(){$('#lock').hidden=true;store.set('nataly-unlocked',true);gradCheck();draw()}
-if(store.get('nataly-unlocked',false))unlock();else setTimeout(()=>{try{$('#lockInput').focus()}catch(e){}},50);
-$('#lockForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#lockInput').value;if(okAns(v)){unlock();return}
-  tries++;const lk=$('#lock');lk.classList.remove('shake');void lk.offsetWidth;lk.classList.add('shake');
-  $('#lockMsg').textContent=tries<2?'Not quite. Try again.':tries<4?'Hint: two words. It starts with "t".':'Hint: teez... (you know the rest)';});if(location.hash==='#celebrate')gradCheck()});
+window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));if(location.hash==='#celebrate')gradCheck()});
 
 /* ---------- ultrasound engine ---------- */
 const IX=70,IY=24,IW=340,IH=340,AR=IH/IW;
@@ -801,6 +793,14 @@ chips();newDeck();
 /* ---------- start ---------- */
 load(cur);
 showTab(location.hash.slice(1));
+/* ---------- lock ---------- */
+const okAns=a=>{const n=a.toLowerCase().replace(/[^a-z0-9]/g,'');return /^t[ie]+[sz]+a*k+b+(5|kh|k|h)a+t+$/.test(n)};
+let tries=0;
+function unlock(){$('#lock').hidden=true;store.set('nataly-unlocked',true);gradCheck();draw()}
+if(store.get('nataly-unlocked',false))unlock();else setTimeout(()=>{try{$('#lockInput').focus()}catch(e){}},50);
+$('#lockForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#lockInput').value;if(okAns(v)){unlock();return}
+  tries++;const lk=$('#lock');lk.classList.remove('shake');void lk.offsetWidth;lk.classList.add('shake');
+  $('#lockMsg').textContent=tries<2?'Not quite. Try again.':tries<4?'Hint: two words. It starts with "t".':'Hint: teez... (you know the rest)';});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
 })();
 </script>
