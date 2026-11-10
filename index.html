@@ -223,7 +223,11 @@ p{margin:0}
 .reader select{background:var(--screen);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
 .field{display:flex;flex-direction:column;gap:6px}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
-.thumbs img{width:120px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--screen)}
+.thumb{position:relative}
+.thumbs img{width:120px;height:96px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--screen);display:block}
+.thumb .rm{position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center;padding:0}
+.thumb .rm:hover{border-color:var(--bad);color:var(--bad)}
+.thumbs{padding-top:8px}
 .res-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .conf{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:4px 10px;border:1px solid var(--line)}
 .conf.low{color:var(--bad);border-color:var(--bad)}.conf.medium{color:var(--amber);border-color:var(--amber)}.conf.high{color:var(--ok);border-color:var(--ok)}
@@ -379,7 +383,7 @@ p{margin:0}
           <p class="small">Upload lecture slides, notes, a protocol, or photos of pages. The AI reads them and writes practice questions just for you. You can pick several files at once.</p>
           <label class="drop" for="noteFile" id="drop"><strong>Choose files</strong><span>or drop them here</span><span class="small">PowerPoint, Word, PDF, text, or photos</span></label>
           <input type="file" id="noteFile" accept=".pdf,.docx,.pptx,.txt,.md,.csv,.rtf,image/*" multiple class="sr">
-          <p class="small" id="fileInfo"></p>
+          <div class="row" style="align-items:center" id="fileRow" hidden><p class="small" id="fileInfo" style="flex:1;min-width:0;overflow-wrap:anywhere"></p><button class="btn" type="button" id="clearNotes">Remove</button></div>
           <details><summary>Or paste text instead</summary><label for="notePaste" class="sr">Pasted notes</label><textarea id="notePaste" rows="6" placeholder="Paste your notes here"></textarea></details>
           <div class="row" style="align-items:center"><label for="qCount" class="small">Questions</label><select id="qCount"><option>5</option><option selected>10</option><option>15</option></select><button class="btn primary" id="makeQuiz">Make my quiz</button><button class="btn" id="redoSaved" hidden>Retake last notes quiz</button></div>
           <p class="status" id="genStatus" aria-live="polite"></p>
@@ -899,9 +903,10 @@ async function readFiles(files){files=[...files];if(!files.length)return;pending
       else if(/\.(ppt|doc)$/.test(n))throw new Error(f.name+' is an old Office format. Open it and save it as .pptx or .docx, or export it as PDF, then try again.');
       else throw new Error('I can’t read '+f.name+'. Use PowerPoint, Word, PDF, text, or photos.')}
     const chars=pending.text.trim().length;const parts=[];if(chars)parts.push(chars.toLocaleString()+' characters of text');if(pending.images.length)parts.push(pending.images.length+' photo'+(pending.images.length>1?'s':''));
-    $('#fileInfo').textContent=pending.name+(parts.length?' · '+parts.join(' and '):'');
+    $('#fileInfo').textContent=pending.name+(parts.length?' · '+parts.join(' and '):'');$('#fileRow').hidden=false;
     if(!chars&&!pending.images.length)gst('That file has no readable text. If it’s a scanned PDF, take photos of the pages instead.','err');else gst('Ready. Pick how many questions and tap Make my quiz.')}
   catch(err){gst(err.message||'Couldn’t read that file.','err')}}
+$('#clearNotes').onclick=()=>{pending={text:'',images:[],name:''};$('#fileRow').hidden=true;$('#fileInfo').textContent='';gst('')};
 $('#noteFile').addEventListener('change',e=>{readFiles(e.target.files);e.target.value=''});
 const drop=$('#drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)readFiles(e.dataTransfer.files)});
 $('#makeQuiz').onclick=async()=>{const text=(pending.text+'\n'+$('#notePaste').value).trim();if(text.length<200&&!pending.images.length){gst('Add a file or paste some notes first (at least a paragraph).','err');return}
@@ -917,9 +922,13 @@ $('#makeQuiz').onclick=async()=>{const text=(pending.text+'\n'+$('#notePaste').v
 $('#redoSaved').onclick=()=>{if(genDeck&&genDeck.length){gst('');startDeck(genDeck)}};
 /* ---------- scan reader ---------- */
 let scanImgs=[];
+function renderThumbs(){const th=$('#scanThumbs');th.innerHTML='';scanImgs.forEach((u,i)=>{const w=el('div','thumb'),im=document.createElement('img');im.src=u;im.alt='Scan image '+(i+1);
+  const x=el('button','rm','×');x.type='button';x.setAttribute('aria-label','Remove scan image '+(i+1));x.onclick=()=>{scanImgs.splice(i,1);renderThumbs();if(!scanImgs.length)sst('')};w.append(im,x);th.append(w)})}
+function resetScan(){scanImgs=[];renderThumbs();$('#scanNote').value='';$('#scanRegion').selectedIndex=0;const b=$('#scanResult');b.hidden=true;b.innerHTML='';sst('');$('#p-reader').scrollIntoView({behavior:'smooth',block:'start'})}
+function newBtn(label){const rr=el('div','row'),nb=el('button','btn primary',label);nb.type='button';nb.onclick=resetScan;rr.append(nb);return rr}
 function sst(html,cls){const g=$('#scanStatus');g.className='status'+(cls?' '+cls:'');g.innerHTML=html}
 async function addScans(files){files=[...files].filter(f=>f.type.startsWith('image/')).slice(0,2);if(!files.length){sst('Choose an image file, like a JPG or PNG.','err');return}
-  try{scanImgs=[];for(const f of files)scanImgs.push(await imgData(f));const th=$('#scanThumbs');th.innerHTML='';scanImgs.forEach((u,i)=>{const im=document.createElement('img');im.src=u;im.alt='Scan image '+(i+1);th.appendChild(im)});
+  try{for(const f of files){if(scanImgs.length>=2)scanImgs.shift();scanImgs.push(await imgData(f))}renderThumbs();
     sst('Ready. Add the region or a question if you like, then tap Read my scan.')}catch(e){sst(e.message,'err')}}
 $('#scanFile').addEventListener('change',e=>{addScans(e.target.files);e.target.value=''});
 const sdrop=$('#scanDrop');['dragenter','dragover'].forEach(ev=>sdrop.addEventListener(ev,e=>{e.preventDefault();sdrop.classList.add('over')}));['dragleave','drop'].forEach(ev=>sdrop.addEventListener(ev,e=>{e.preventDefault();sdrop.classList.remove('over')}));sdrop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)addScans(e.dataTransfer.files)});
@@ -928,7 +937,7 @@ function sec(title,node){const d=el('div','res-sec');d.append(el('h3',null,title
 function showRead(r){const box=$('#scanResult');box.innerHTML='';
   const head=el('div','res-head');head.append(el('p','eyebrow','AI read'));const c=['low','medium','high'].includes(r.confidence)?r.confidence:'low';head.append(el('span','conf '+c,'Confidence: '+c));box.append(head);
   box.append(el('p','res-sum',r.summary||''));
-  if(r.is_ultrasound===false){box.append(el('p','small','This doesn’t look like an ultrasound image. Try a clearer photo or a screenshot of the scan.'));box.hidden=false;return}
+  if(r.is_ultrasound===false){box.append(el('p','small','This doesn’t look like an ultrasound image. Try a clearer photo or a screenshot of the scan.'));box.append(newBtn('Try another image'));box.hidden=false;return}
   if(r.view)box.append(sec('View',el('p',null,r.view)));
   if(r.structures&&r.structures.length){const t=el('div','tagrow');r.structures.forEach(x=>t.append(el('span','tag',x)));box.append(sec('Structures',t))}
   if(r.findings&&r.findings.length){const u=el('ul');r.findings.forEach(f=>{const li=el('li');li.append(el('b',null,f.finding),document.createTextNode(': '+f.description));u.append(li)});box.append(sec('Findings',u))}
@@ -936,7 +945,7 @@ function showRead(r){const box=$('#scanResult');box.innerHTML='';
   if(r.next_steps&&r.next_steps.length){const u=el('ul');r.next_steps.forEach(x=>u.append(el('li',null,x)));box.append(sec('What to do next',u))}
   if(r.teaching_point){const d=el('div','tp');d.append(el('p',null,r.teaching_point));box.append(sec('Remember',d))}
   if(r.image_limits&&!/^none\.?$/i.test(r.image_limits))box.append(sec('Image limits',el('p','small',r.image_limits)));
-  box.append(el('p','small','Study aid only. AI can miss things or be confidently wrong. Check with your instructor or the reading radiologist.'));
+  box.append(el('p','small','Study aid only. AI can miss things or be confidently wrong. Check with your instructor or the reading radiologist.'));box.append(newBtn('Read another scan'));
   box.hidden=false}
 $('#readScan').onclick=async()=>{if(!scanImgs.length){sst('Add a photo or screenshot of the scan first.','err');return}
   const btn=$('#readScan');btn.disabled=true;sst('<span class="spin"></span>Looking at your scan. This takes about 15 to 40 seconds…');
