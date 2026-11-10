@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>For Nataly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@500;700&display=swap">
+<style>
+/* Layout: an ultrasound console. Dark scan room, amber readouts, one warm pink for the love notes. */
+:root{
+  --bg:#0e1116; --panel:#161b22; --panel2:#1d242d; --line:#2b3540;
+  --fg:#eaeef2; --muted:#9aa6b1; --screen:#040507;
+  --amber:#f2c96b; --pink:#ff9cbc; --pink-ink:#22110a;
+  --ok:#86dcae; --bad:#ffa08f;
+  --paper:#fbf1ec; --ink:#2b1d21; --ink-muted:#7a6168; --scrim:rgba(4,5,7,.78);
+  --f-display:"Sora",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --f-hand:"Caveat","Segoe Print","Bradley Hand",cursive;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-display);font-size:15px;line-height:1.55}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1060px;margin:0 auto;padding-block:22px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+
+header{display:flex;flex-direction:column;gap:6px}
+.dicom{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--amber);text-transform:uppercase;display:flex;flex-wrap:wrap;gap:4px 16px}
+h1{font-size:clamp(30px,6vw,46px);line-height:1.05;margin:4px 0 0;font-weight:700;letter-spacing:-.02em;text-wrap:balance}
+h1 em{font-style:normal;color:var(--pink)}
+.sub{color:var(--muted);margin:0;max-width:60ch}
+
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:10px}
+.tab{background:transparent;border:1px solid transparent;border-radius:8px;padding:8px 14px;cursor:pointer;color:var(--muted);font-weight:600;font-size:14px}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--panel2);border-color:var(--line);color:var(--fg);box-shadow:inset 0 -2px 0 var(--pink)}
+
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0}
+h2{font-size:24px;line-height:1.2;margin:0;text-wrap:balance}
+p{margin:0}
+
+/* scan */
+.scan{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:780px){.scan{grid-template-columns:minmax(0,1fr)}}
+.monitor{background:var(--screen);border:1px solid var(--line);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px}
+#us{display:block;width:100%;height:auto;aspect-ratio:5/4;border-radius:6px;cursor:crosshair;touch-action:manipulation;background:var(--screen)}
+.console{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;flex-wrap:wrap}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.dots{display:flex;gap:8px;flex-wrap:wrap}
+.dot{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-family:var(--f-mono);font-size:11px;color:var(--muted);cursor:pointer;display:grid;place-items:center;padding:0}
+.dot[disabled]{cursor:not-allowed;opacity:.45}
+.dot.done{background:var(--pink);border-color:var(--pink);color:var(--pink-ink);font-weight:600}
+.dot.cur{outline:2px solid var(--amber);outline-offset:2px}
+.feedback{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:72px}
+.feedback.ok{border-color:var(--ok);color:var(--ok)}
+.feedback.bad{border-color:color-mix(in srgb,var(--bad) 55%,var(--line))}
+.feedback.bad b{color:var(--bad)}
+.hint{color:var(--muted);font-size:14px;border-left:2px solid var(--amber);padding-left:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border-radius:9px;padding:9px 16px;cursor:pointer;font-weight:600;font-size:14px;border:1px solid var(--line);background:var(--panel2)}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--pink);border-color:var(--pink);color:var(--pink-ink)}
+.btn.primary:hover{filter:brightness(1.06)}
+.small{font-size:13px;color:var(--muted)}
+
+/* countdown */
+.cd{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:780px){.cd{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.clock{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cell{background:var(--screen);border:1px solid var(--line);border-radius:10px;padding:12px 6px;text-align:center}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:clamp(24px,5vw,40px);font-weight:600;color:var(--amber);line-height:1.1}
+.unit{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.bar{height:10px;border-radius:5px;background:var(--screen);border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--pink));width:0}
+.datefield{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.datefield input{background:var(--screen);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.note{background:var(--paper);color:var(--ink);border-radius:4px 4px 14px 4px;padding:22px 22px 18px;display:flex;flex-direction:column;gap:10px;transform:rotate(-1deg);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.note .eyebrow{color:var(--ink-muted)}
+.note blockquote{margin:0;font-family:var(--f-hand);font-size:clamp(26px,4.4vw,32px);line-height:1.2;font-weight:500}
+.note .sig{font-family:var(--f-hand);font-size:24px;align-self:flex-end;font-weight:700}
+
+/* study */
+.study{display:flex;flex-direction:column;gap:16px;max-width:760px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.qhead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline}
+.score{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted)}
+.q{font-size:19px;font-weight:600;line-height:1.35;text-wrap:balance}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer;display:flex;gap:12px;align-items:baseline}
+.opt:hover:not([disabled]){border-color:var(--muted)}
+.opt[disabled]{cursor:default}
+.opt .k{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.opt.right{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--panel2))}
+.opt.wrong{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 10%,var(--panel2))}
+.explain{display:flex;flex-direction:column;gap:6px;border-left:2px solid var(--pink);padding-left:12px}
+.cheer{font-family:var(--f-hand);font-size:26px;color:var(--pink);line-height:1.1}
+
+/* card */
+.overlay{position:fixed;inset:0;background:var(--scrim);display:flex;z-index:20;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));overflow-y:auto}
+.overlay>*{margin:auto}
+.card{background:var(--paper);color:var(--ink);max-width:470px;width:100%;border-radius:6px;padding:28px 26px 22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 20px 60px rgba(0,0,0,.5);animation:pop .5s ease-out}
+@keyframes pop{from{transform:translateY(14px) scale(.97);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.card{animation:none}.note{transform:none}}
+.card .eyebrow{color:var(--ink-muted)}
+.card h2{font-size:clamp(24px,5vw,30px)}
+.card .big{font-family:var(--f-hand);font-size:clamp(46px,11vw,64px);line-height:.95;color:#c2386a;font-weight:700}
+.card p{color:var(--ink);max-width:60ch}
+.chat{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:10px;background:#f3e3dd}
+.bub{max-width:75%;padding:7px 12px;border-radius:14px;font-size:14px}
+.bub.her{background:#fff;align-self:flex-start;border-bottom-left-radius:4px}
+.bub.him{background:#c2386a;color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.card .sig{font-family:var(--f-hand);font-size:30px;font-weight:700;align-self:flex-end}
+.card .btn{background:#fff;border-color:#e4cfc8;color:var(--ink)}
+.card .btn.primary{background:#c2386a;border-color:#c2386a;color:#fff}
+
+:root{--rep-bg:#ffffff;--rep-ink:#1d232a;--rep-muted:#5f6b76;--rep-line:#dde2e7;--rep-accent:#1f5f8b}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.banner{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:linear-gradient(90deg,color-mix(in srgb,var(--pink) 24%,var(--panel)),var(--panel));border:1px solid var(--pink);border-radius:12px;padding:12px 16px;font-weight:600}
+.btn.on{background:color-mix(in srgb,#d4382c 30%,var(--panel2));border-color:#e0554a}
+/* checklist */
+.todo{max-width:720px}
+.todo .panel{gap:14px}
+.todo-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.todo-item{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.todo-item .tt{flex:1;min-width:0;overflow-wrap:anywhere}
+.todo-item.done .tt{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--pink)}
+.tick{width:24px;height:24px;border-radius:7px;border:1.5px solid var(--muted);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:13px;color:transparent;padding:0;flex:none}
+.todo-item.done .tick{background:var(--pink);border-color:var(--pink);color:var(--pink-ink)}
+.del{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px}
+.del:hover{color:var(--bad)}
+.todo-add{display:flex;gap:8px}
+.todo-add input{flex:1;min-width:0;background:var(--screen);border:1px solid var(--line);border-radius:9px;padding:9px 12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--paper);color:var(--ink);border-radius:999px;padding:10px 18px;font-weight:600;z-index:40;box-shadow:0 8px 24px rgba(0,0,0,.4);max-width:calc(100% - 32px);text-align:center}
+#confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:35}
+/* report */
+.report{background:var(--rep-bg);color:var(--rep-ink);max-width:640px;width:100%;border-radius:6px;padding:26px;display:flex;flex-direction:column;gap:16px;font-size:14px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.rep-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:2px solid var(--rep-accent);padding-bottom:12px}
+.rep-kicker{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--rep-accent)}
+.report h2{font-size:22px}
+.rep-stamp{font-family:var(--f-mono);font-weight:600;color:#c2386a;border:2px solid #c2386a;border-radius:4px;padding:2px 8px;transform:rotate(6deg);letter-spacing:.1em;flex:none}
+.rep-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 16px;margin:0}
+@media (max-width:520px){.rep-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.report{padding:20px}}
+.rep-meta dt{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--rep-muted)}
+.rep-meta dd{margin:0;font-weight:600}
+.report h3{font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--rep-accent);margin:0 0 4px}
+.report table{width:100%;border-collapse:collapse}
+.report td{border-top:1px solid var(--rep-line);padding:7px 0;vertical-align:top}
+.report td:first-child{font-weight:600;width:28%;padding-right:12px}
+.report ol{margin:0;padding-left:20px}
+.rep-sign{display:flex;flex-direction:column;align-items:flex-end;border-top:1px solid var(--rep-line);padding-top:12px}
+.rep-sign .sig{font-family:var(--f-hand);font-size:34px;font-weight:700;line-height:1.1}
+.report .small{color:var(--rep-muted)}
+.report .btn{background:#fff;border-color:var(--rep-line);color:var(--rep-ink)}
+.report .btn.primary{background:var(--rep-accent);border-color:var(--rep-accent);color:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner" id="gradBanner" hidden><span>Nataly did it. The final semester is done!</span><button class="btn primary" id="bannerOpen">Celebrate</button></div>
+  <header>
+    <div class="dicom"><span>Pt: Nataly</span><span>Op: Mohamed</span><span>Exam: Final semester</span><span id="hdrDate"></span></div>
+    <h1>For <em>Nataly</em>, future sonographer</h1>
+    <p class="sub">Eight scans to find, a countdown to the finish line, study questions for the boring nights, and a checklist to tick off.</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-scan" data-tab="scan" aria-selected="true">Scan game</button>
+    <button class="tab" role="tab" id="t-countdown" data-tab="countdown" aria-selected="false">Countdown</button>
+    <button class="tab" role="tab" id="t-study" data-tab="study" aria-selected="false">Study mode</button>
+    <button class="tab" role="tab" id="t-checklist" data-tab="checklist" aria-selected="false">Checklist</button>
+  </nav>
+
+  <!-- SCAN -->
+  <section id="p-scan" role="tabpanel" aria-labelledby="t-scan">
+    <div class="scan">
+      <div class="monitor">
+        <canvas id="us" width="960" height="768" aria-label="Ultrasound image. Tap the structure you are asked to find."></canvas>
+        <div class="console"><span>Freeze</span><span>Gain</span><span>Depth</span><span>Caliper</span><span id="consoleLvl">1/7</span></div>
+      </div>
+      <div class="side">
+        <div class="dots" id="dots"></div>
+        <p class="eyebrow" id="lvlTitle"></p>
+        <h2 id="task"></h2>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="row">
+          <button class="btn" id="colorBtn" hidden aria-pressed="false">Color: off</button>
+          <button class="btn" id="hintBtn">Show hint</button>
+          <button class="btn primary" id="nextBtn" hidden>Next scan</button>
+        </div>
+        <p class="hint" id="hint" hidden></p>
+        <p class="small">Find them all and there's something waiting for you at the end.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COUNTDOWN -->
+  <section id="p-countdown" role="tabpanel" aria-labelledby="t-countdown" hidden>
+    <div class="cd">
+      <div class="panel">
+        <p class="eyebrow" id="cdLabel">Until the final semester is done</p>
+        <div class="clock" id="clock">
+          <div class="cell"><div class="num" id="cdD">0</div><div class="unit">days</div></div>
+          <div class="cell"><div class="num" id="cdH">0</div><div class="unit">hours</div></div>
+          <div class="cell"><div class="num" id="cdM">0</div><div class="unit">min</div></div>
+          <div class="cell"><div class="num" id="cdS">0</div><div class="unit">sec</div></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;gap:8px" class="small"><span>Final year</span><span id="pct">0% done</span></div>
+          <div class="bar"><i id="barFill"></i></div>
+        </div>
+        <label class="datefield" for="cdDate">Last day
+          <input type="date" id="cdDate">
+        </label>
+      </div>
+      <div class="note">
+        <p class="eyebrow" id="noteLabel">Today's note</p>
+        <blockquote id="noteText"></blockquote>
+        <span class="sig">Mohamed</span>
+        <p class="small" style="color:var(--ink-muted)">A new note shows up every day.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STUDY -->
+  <section id="p-study" role="tabpanel" aria-labelledby="t-study" hidden>
+    <div class="study">
+      <div class="chips" id="chips"></div>
+      <div class="panel">
+        <div class="qhead"><p class="eyebrow" id="qTopic"></p><span class="score" id="score"></span></div>
+        <p class="q" id="qText"></p>
+        <div class="opts" id="opts"></div>
+        <div class="explain" id="explain" hidden></div>
+        <div class="row"><button class="btn primary" id="qNext" hidden>Next question</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHECKLIST -->
+  <section id="p-checklist" role="tabpanel" aria-labelledby="t-checklist" hidden>
+    <div class="todo">
+      <div class="panel">
+        <div class="qhead"><p class="eyebrow">Finish line checklist</p><span class="score" id="todoCount"></span></div>
+        <div class="bar"><i id="todoBar"></i></div>
+        <p class="small" id="coffees"></p>
+        <ul class="todo-list" id="todoList"></ul>
+        <form id="todoForm" class="todo-add"><label for="todoInput" class="sr">Add an item</label><input id="todoInput" placeholder="Add an exam, comp or deadline" maxlength="80" autocomplete="off"><button class="btn" type="submit">Add</button></form>
+        <p class="small">These are a starting list. Remove what doesn't apply and add your real ones.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="overlay" id="card" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+    <p class="eyebrow" id="cardEyebrow">Scan complete</p>
+    <h2 id="cardTitle">Nataly, I'm so proud of you.</h2>
+    <div class="big">You made it.</div>
+    <p>Every scan, every late night, every exam you were sure went badly and then didn't. I saw all of it. You're going to be an amazing sonographer, and I'm going to brag about you to everyone.</p>
+    <div class="chat" aria-label="Our inside joke">
+      <span class="bub her">what?</span>
+      <span class="bub him">teezak b5at</span>
+    </div>
+    <span class="sig">Love, Mohamed</span>
+    <div class="row">
+      <button class="btn primary" id="cardReport">Read your report</button>
+      <button class="btn" id="cardClose">Close</button>
+      <button class="btn" id="cardReset">Scan again</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="report" hidden>
+  <article class="report" role="dialog" aria-modal="true" aria-labelledby="repTitle">
+    <div class="rep-head"><div><p class="rep-kicker">Department of Loving Imaging</p><h2 id="repTitle">Diagnostic Ultrasound Report</h2></div><span class="rep-stamp">FINAL</span></div>
+    <dl class="rep-meta">
+      <div><dt>Patient</dt><dd>Nataly</dd></div>
+      <div><dt>Exam</dt><dd>Whole-person survey</dd></div>
+      <div><dt>Date</dt><dd id="repDate"></dd></div>
+      <div><dt>Referred by</dt><dd>Mohamed</dd></div>
+      <div><dt>Probe</dt><dd>L12-5 and a heart</dd></div>
+      <div><dt>Accession</dt><dd>NM-0001</dd></div>
+    </dl>
+    <section><h3>Indication</h3><p>Final semester of sonography school. Patient reports tiredness, too much coffee, and an alarming amount of anatomy knowledge.</p></section>
+    <section><h3>Technique</h3><p>Real-time grayscale and color Doppler imaging in multiple planes, performed with a lot of love. Patient was very cooperative, mostly.</p></section>
+    <section><h3>Findings</h3>
+      <table>
+        <tr><td>Brain</td><td>Normal size, very active. Contains the full SRU carotid criteria and every TI-RADS point.</td></tr>
+        <tr><td>Eyes</td><td>Can spot a 3 mm nodule from across the room. No anisotropy.</td></tr>
+        <tr><td>Hands</td><td>Steady probe technique. Excellent heel-toe.</td></tr>
+        <tr><td>Heart</td><td>Enlarged with kindness. Patients and Mohamed both report excellent flow. No regurgitation of complaints (mostly).</td></tr>
+        <tr><td>Patience</td><td>Within normal limits, even after long shifts and difficult patients.</td></tr>
+        <tr><td>Smile</td><td>Hyperechoic. Causes posterior enhancement in everyone nearby.</td></tr>
+      </table>
+    </section>
+    <section><h3>Impression</h3><ol><li>Benign. Honestly, perfect.</li><li>Fully ready to be a sonographer.</li><li>Officially done with this semester. Everyone is very proud.</li></ol></section>
+    <section><h3>Recommendation</h3><p>Graduation, a nice dinner, a long sleep, and lifelong follow-up with Mohamed.</p></section>
+    <div class="rep-sign"><span class="small">Electronically signed</span><span class="sig">Mohamed</span><span class="small">Chief Admirer, Department of Nataly</span></div>
+    <div class="row"><button class="btn primary" id="repClose">Close report</button></div>
+  </article>
+</div>
+
+<div class="overlay" id="grad" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="gradTitle">
+    <p class="eyebrow">Final semester · complete</p>
+    <h2 id="gradTitle">Congratulations, Nataly.</h2>
+    <div class="big">Sonographer.</div>
+    <p>The countdown hit zero. Every one of those days I was proud of you, and today I'm prouder than ever. The late nights, the exams, the clinical hours, all of it. You did it. Now go celebrate. Dinner's on me.</p>
+    <span class="sig">Love, Mohamed</span>
+    <div class="row">
+      <button class="btn primary" id="gradReport">Read your report</button>
+      <button class="btn" id="gradClose">Close</button>
+    </div>
+  </div>
+</div>
+<canvas id="confetti" aria-hidden="true" hidden></canvas>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+$('#hdrDate').textContent=new Date().toLocaleDateString(undefined,{day:'2-digit',month:'short',year:'numeric'});
+
+/* ---------- tabs ---------- */
+const TABS=['scan','countdown','study','checklist'];
+function showTab(t){if(!TABS.includes(t))t='scan';TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab;showTab(b.dataset.tab)}));
+window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));
+gradCheck();if(location.hash==='#celebrate')gradCheck()});
+
+/* ---------- ultrasound engine ---------- */
+const IX=70,IY=24,IW=340,IH=340,AR=IH/IW;
+const fn=t=>typeof t==='number'?()=>t:t;
+const E=(x,y,rx,ry,val,o={})=>Object.assign({k:'e',x,y,rx,ry,val},o);
+const B=(u0,u1,top,bot,val,o={})=>Object.assign({k:'b',u0,u1,top:fn(top),bot:fn(bot),val},o);
+const HT=(x,y,s,val,o={})=>Object.assign({k:'h',x,y,s,val},o);
+const skin=()=>B(0,1,0,.022,.8);
+
+function inside(s,u,v){
+  if(s.k==='e'){let dx=u-s.x,dy=(v-s.y)*AR;if(s.a){const c=Math.cos(s.a),n=Math.sin(s.a);const rx=dx*c+dy*n,ry=-dx*n+dy*c;dx=rx;dy=ry}return dx*dx/(s.rx*s.rx)+dy*dy/(s.ry*s.ry)<=1}
+  if(s.k==='b'){if(u<s.u0||u>s.u1)return false;return v>=s.top(u)&&v<=s.bot(u)}
+  if(s.k==='h'){const x=(u-s.x)/s.s,y=-(v-s.y)*AR/s.s;const q=x*x+y*y-1;return q*q*q-x*x*y*y*y<=0}
+  return false;
+}
+function shade(s,u,v,n,m){
+  let val=s.val;
+  if(s.tex==='mus'){const f=((u*1.4+v*.35)*8+n*2.2)%1;if(f<.06)val=val+.28}
+  else if(s.tex==='fib'){const t=s.top(u),b=s.bot(u);const q=(v-t)/Math.max(1e-4,b-t);val*=.62+.5*(.5+.5*Math.sin(q*Math.PI*2*8+n*2))}
+  else if(s.tex==='het'){val*=.65+.7*m}
+  else if(s.tex==='soft'){val*=.85+.3*m}
+  return val;
+}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function gauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r())}
+function vnoise(r,cell){const gw=Math.ceil(IW/cell)+2,gh=Math.ceil(IH/cell)+2,g=new Float32Array(gw*gh);for(let i=0;i<g.length;i++)g[i]=r();const o=new Float32Array(IW*IH);
+  for(let y=0;y<IH;y++){const gy=y/cell,iy=Math.floor(gy);let fy=gy-iy;fy=fy*fy*(3-2*fy);for(let x=0;x<IW;x++){const gx=x/cell,ix=Math.floor(gx);let fx=gx-ix;fx=fx*fx*(3-2*fx);const a=g[iy*gw+ix],b=g[iy*gw+ix+1],c=g[(iy+1)*gw+ix],d=g[(iy+1)*gw+ix+1];o[y*IW+x]=a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy}}return o}
+function kern(sig,energy){const r=Math.ceil(sig*3),k=[];let s=0;for(let i=-r;i<=r;i++){const v=Math.exp(-i*i/(2*sig*sig));k.push(v);s+=energy?v*v:v}const n=energy?Math.sqrt(s):s;return k.map(v=>v/n)}
+function conv(a,k,horiz){const r=(k.length-1)/2,o=new Float32Array(a.length);
+  if(horiz){for(let y=0;y<IH;y++){const b=y*IW;for(let x=0;x<IW;x++){let s=0;for(let j=-r;j<=r;j++){let xx=x+j;xx=xx<0?0:xx>=IW?IW-1:xx;s+=a[b+xx]*k[j+r]}o[b+x]=s}}}
+  else{for(let y=0;y<IH;y++){for(let x=0;x<IW;x++){let s=0;for(let j=-r;j<=r;j++){let yy=y+j;yy=yy<0?0:yy>=IH?IH-1:yy;s+=a[yy*IW+x]*k[j+r]}o[y*IW+x]=s}}}return o}
+
+function render(L,seed){
+  const N=IW*IH,r=mulberry(seed),S=L.shapes;
+  const n1=vnoise(r,28),n2=vnoise(r,9);
+  let M=new Float32Array(N);
+  for(let py=0;py<IH;py++){const v=(py+.5)/IH;for(let px=0;px<IW;px++){const u=(px+.5)/IW,i=py*IW+px;let b=L.bg;for(const s of S){if(s.val==null)continue;if(inside(s,u,v))b=shade(s,u,v,n1[i],n2[i])}M[i]=b*(1+.3*(n1[i]-.5)+.16*(n2[i]-.5))}}
+  const ks=kern(1.1,false);M=conv(conv(M,ks,true),ks,false);
+  /* specular reflections where the beam meets an interface head-on (axial gradient) */
+  const Sp=new Float32Array(N);for(let y=2;y<IH-2;y++)for(let x=0;x<IW;x++){const i=y*IW+x;Sp[i]=Math.max(0,M[i+2*IW]-M[i-2*IW])*.5+Math.max(0,M[i-2*IW]-M[i+2*IW])*.9}
+  for(let i=0;i<N;i++)M[i]+=.75*Sp[i];
+  /* shadows, enhancement, edge refraction, reverberation: built as a soft multiplier mask */
+  let F=new Float32Array(N).fill(1),Ad=new Float32Array(N);
+  for(const s of S){if(!(s.shadow||s.enh||s.edge||s.reverb))continue;
+    const top=new Int16Array(IW).fill(-1),bot=new Int16Array(IW).fill(-1);let l=-1,rr=-1;
+    for(let px=0;px<IW;px++){const u=(px+.5)/IW;for(let py=0;py<IH;py++){if(inside(s,u,(py+.5)/IH)){if(top[px]<0)top[px]=py;bot[px]=py}}if(bot[px]>=0){if(l<0)l=px;rr=px}}
+    if(l<0)continue;
+    for(let px=0;px<IW;px++){if(bot[px]<0)continue;const st=s.fromTop?top[px]+3:bot[px]+1;for(let py=st;py<IH;py++){const i=py*IW+px;
+      if(s.shadow)F[i]*=s.shadow;if(s.enh)F[i]*=1+.32*Math.exp(-((py-bot[px])/IH)*4)}}
+    if(s.reverb){for(let px=0;px<IW;px++){if(top[px]<0)continue;for(const n of [2,3]){const yc=top[px]*n;for(let t=-1;t<=1;t++){const py=yc+t;if(py>0&&py<IH)Ad[py*IW+px]+=(t?0.08:0.2)/(n-1)}}}}
+    if(s.edge){const cols=[];for(let px=l-2;px<=l+1;px++)cols.push([px,l]);for(let px=rr-1;px<=rr+2;px++)cols.push([px,rr]);
+      for(const [px,ref] of cols){if(px<0||px>=IW)continue;const st=Math.round((top[ref]+bot[ref])/2);for(let py=st;py<IH;py++)F[py*IW+px]*=.6}}
+  }
+  const kf=kern(1.6,false);F=conv(F,kf,true);Ad=conv(Ad,kf,true);
+  for(let i=0;i<N;i++)M[i]=M[i]*F[i]+Ad[i];
+  /* coherent speckle: complex scatterers convolved with the beam's point spread function, then log-compressed */
+  const DR=60;let re=new Float32Array(N),im=new Float32Array(N);
+  for(let i=0;i<N;i++){const val=Math.max(.03,Math.min(1.25,M[i]));const g=Math.sqrt(Math.pow(10,(val-1)*DR/10))*Math.SQRT1_2;re[i]=gauss(r)*g;im[i]=gauss(r)*g}
+  const kx=kern(2.2,true),ky=kern(1,true);
+  re=conv(conv(re,kx,true),ky,false);im=conv(conv(im,kx,true),ky,false);
+  const out=new Uint8ClampedArray(N);
+  for(let py=0;py<IH;py++){const v=py/IH,tgc=.02-.05*v;for(let px=0;px<IW;px++){const i=py*IW+px;const e2=re[i]*re[i]+im[i]*im[i]+1e-12;
+    let g=1+(10*Math.log10(e2)+2.5)/DR+tgc;g=g<0?0:g>1?1:g;out[i]=255*Math.pow(g,1.15)}}
+  return out;
+}
+
+/* ---------- levels ---------- */
+const ic=u=>.5+(.52-u)*.3, ih=u=>.05+.025*Math.exp(-(((u-.42)/.08)**2)), ec=u=>.5-(.52-u)*.35, eh=.032;
+const bt=u=>.5+1.1*(u-.45)**2, th=u=>.15-.12*Math.max(0,u-.62), tt=u=>bt(u)-th(u);
+const dlt=u=>.42+.01*Math.sin(u*3), dlb=u=>.56-.06*Math.exp(-(((u-.52)/.08)**2));
+const at=u=>.09+Math.max(0,u-.62)*.55, ab=u=>.23+Math.max(0,u-.62)*.75, cc=u=>.7-(u-.8)*2;
+
+const LV=[
+ {name:'Thyroid',preset:'Thyroid',tag:'RT/LT THY TRV',frq:'12.0',gn:54,focus:.38,depth:4,bg:.34,
+  task:'Find the thyroid gland',
+  hint:'Homogeneous, ground-glass texture, brighter than the strap muscles above it. It wraps around the trachea like a bow tie.',
+  success:'Found it. Normal thyroid is homogeneous and brighter than the strap muscles. One down!',
+  label:'THYROID',target:'thy',
+  info:{trachea:'That\'s the trachea: bright curved air interface, with reverberation and a dirty shadow behind it. The thyroid wraps around it.',cca:'That\'s the common carotid artery. Round, anechoic, bright walls. The thyroid lobe sits just medial to it.',ijv:'Internal jugular vein. Flatter than the carotid and it compresses.',strap:'Strap muscles, hypoechoic compared to thyroid. Look just deeper.',scm:'Sternocleidomastoid muscle. Too lateral and too superficial.',eso:'Esophagus, behind the trachea, usually on the patient\'s left.',longus:'Longus colli muscle. That\'s deep to the thyroid.'},
+  shapes:[skin(),B(0,1,.022,.06,.3),E(.1,.15,.14,.06,.2,{tex:'mus',id:'scm'}),E(.9,.15,.14,.06,.2,{tex:'mus',id:'scm'}),E(.35,.16,.13,.04,.18,{tex:'mus',id:'strap'}),E(.65,.16,.13,.04,.18,{tex:'mus',id:'strap'}),
+   E(.31,.36,.15,.12,.66,{id:'thy'}),E(.69,.36,.15,.12,.66,{id:'thy'}),E(.5,.255,.11,.04,.66,{id:'thy'}),
+   E(.1,.42,.068,.068,.6,{id:'cca'}),E(.1,.42,.058,.058,.02,{id:'cca',enh:true,edge:true}),E(.9,.42,.068,.068,.6,{id:'cca'}),E(.9,.42,.058,.058,.02,{id:'cca',enh:true,edge:true}),
+   E(.21,.29,.055,.022,.03,{id:'ijv'}),E(.79,.29,.055,.022,.03,{id:'ijv'}),
+   E(.5,.41,.09,.08,.9,{id:'trachea'}),E(.5,.425,.082,.07,.12,{id:'trachea',shadow:.22,reverb:true,fromTop:true}),E(.63,.56,.045,.03,.32,{id:'eso'}),
+   E(.32,.68,.11,.045,.17,{tex:'mus',id:'longus'}),E(.68,.68,.11,.045,.17,{tex:'mus',id:'longus'}),B(0,1,.8,.82,.55)]},
+
+ {name:'Carotid',preset:'Carotid',tag:'RT CCA LONG',frq:'9.0',gn:50,focus:.5,depth:4,bg:.3,
+  task:'Find the carotid bifurcation',
+  hint:'Follow the common carotid toward the head (left of the screen) until it splits into the ICA and ECA.',
+  success:'Bifurcation found. The ICA is usually the bigger, deeper branch with the bulb, and it has no branches in the neck.',
+  label:'BIF',target:'bif',
+  info:{cca:'That\'s the common carotid. Follow it toward the head, on the left side of the screen, until it splits.',ica:'That\'s the ICA, the bigger, deeper branch with the bulb. Go back to where it starts.',eca:'That\'s the ECA, the smaller, more superficial branch. Go back to where it splits off.',ijv:'Internal jugular vein, superficial to the carotid.',scm:'Sternocleidomastoid muscle. Go deeper.'},
+  shapes:[skin(),B(0,1,.03,.16,.2,{tex:'mus',id:'scm'}),B(0,1,u=>.18+.01*Math.sin(u*6),u=>.25+.012*Math.sin(u*5+1),.03,{id:'ijv'}),
+   B(.46,1,.441,.559,.72,{id:'cca'}),B(0,.52,u=>ic(u)-ih(u)-.009,u=>ic(u)+ih(u)+.009,.72,{id:'ica'}),B(0,.52,u=>ec(u)-eh-.009,u=>ec(u)+eh+.009,.72,{id:'eca'}),
+   B(.46,1,.45,.55,.015,{id:'cca'}),B(0,.52,u=>ic(u)-ih(u),u=>ic(u)+ih(u),.015,{id:'ica'}),B(0,.52,u=>ec(u)-eh,u=>ec(u)+eh,.015,{id:'eca'}),
+   B(0,1,.84,.87,.65),B(0,1,.87,1,.2),E(.49,.5,.05,.06,null,{id:'bif'})]},
+
+ {name:'Carotid Doppler',preset:'Carotid',tag:'LT ICA LONG',frq:'9.0',gn:48,focus:.5,depth:4,bg:.3,doppler:true,
+  task:'Turn on Color and find the stenosis',
+  hint:'Normal flow is smooth, even color. At a tight narrowing the velocity jumps past the scale, so the color aliases into a yellow and cyan mosaic, with turbulence just past it.',
+  success:'Stenosis found. Plaque narrows the lumen, the color aliases at the narrowing, and there\'s turbulence just downstream. Next step: spectral Doppler to grade it by PSV.',
+  label:'STENOSIS',target:'sten',
+  info:{lumen:'Normal laminar flow here. Look for where the color turns into a yellow and cyan mosaic.',scm:'Sternocleidomastoid. Go deeper.'},
+  shapes:[skin(),B(0,1,.022,.17,.2,{tex:'mus',id:'scm'}),B(0,1,u=>dlt(u)-.01,dlt,.72),B(0,1,dlt,dlb,.015,{id:'lumen'}),B(0,1,dlb,.56,.62,{tex:'soft'}),
+   E(.55,.548,.016,.008,.95,{shadow:.3}),B(0,1,.56,.57,.72),B(0,1,.84,.87,.62),E(.5,.5,.075,.07,null,{id:'sten'})]},
+
+ {name:'Breast',preset:'Breast',tag:'RT BR 10:00 4CMFN',frq:'12.0',gn:52,focus:.4,depth:4,bg:.22,
+  task:'Find the simple cyst',
+  hint:'Anechoic, oval, smooth walls, and brighter tissue right behind it (posterior acoustic enhancement).',
+  success:'Simple cyst: anechoic, circumscribed, posterior enhancement. That\'s BI-RADS 2. Beautiful.',
+  label:'CYST',target:'cyst',
+  info:{lobule:'That\'s a fat lobule. Same gray as the subcutaneous fat, and no enhancement behind it.',gland:'Fibroglandular tissue, the brighter middle layer.',fat:'Subcutaneous fat.',cooper:'Cooper\'s ligament, the thin bright curvy line.',pec:'Pectoralis muscle. Too deep.',rib:'Rib with its shadow. Way too deep.',retro:'Retromammary fat.'},
+  shapes:[skin(),B(0,1,.022,u=>.27+.03*Math.sin(u*7),.24,{id:'fat'}),
+   E(.14,.16,.08,.045,.14,{id:'fat'}),E(.48,.11,.09,.04,.14,{id:'fat'}),E(.83,.17,.08,.045,.14,{id:'fat'}),
+   B(0,1,u=>.14+.06*Math.sin(u*8+1),u=>.146+.06*Math.sin(u*8+1),.62,{id:'cooper'}),B(0,1,u=>.21+.04*Math.sin(u*11+2),u=>.214+.04*Math.sin(u*11+2),.58,{id:'cooper'}),
+   B(0,1,u=>.27+.03*Math.sin(u*7),.6,.58,{id:'gland',tex:'soft'}),
+   E(.24,.43,.07,.04,.2,{id:'lobule'}),E(.4,.53,.05,.025,.22,{id:'lobule'}),E(.65,.4,.08,.05,.01,{id:'cyst',enh:true,edge:true,a:-.15}),
+   B(0,1,.6,.67,.2,{id:'retro'}),B(0,1,.67,.8,.3,{tex:'mus',id:'pec'}),
+   E(.28,.9,.09,.03,.9,{id:'rib',shadow:.08}),E(.8,.9,.09,.03,.9,{id:'rib',shadow:.08})]},
+
+ {name:'Scrotum',preset:'Testis',tag:'RT TESTIS LONG',frq:'12.0',gn:56,focus:.45,depth:4,bg:.05,
+  task:'Find the epididymal head',
+  hint:'It sits on the superior pole of the testis (left side here). Iso- to slightly hyperechoic compared to the testis.',
+  success:'Epididymal head found, right on the superior pole. Great eye.',
+  label:'EPID HEAD',target:'epi',
+  info:{testis:'That\'s the testis itself: medium-level, homogeneous echoes. Check its superior pole, on the left.',med:'That\'s the mediastinum testis, the bright linear band.'},
+  miss:'That\'s just a tiny bit of fluid around the testis. Keep looking.',
+  shapes:[B(0,1,0,.07,.5),E(.56,.5,.36,.24,.55,{id:'testis'}),E(.6,.59,.2,.01,.72,{id:'med',a:.12}),E(.23,.26,.11,.075,.63,{id:'epi'})]},
+
+ {name:'Shoulder',preset:'MSK Shldr',tag:'RT SUPRASPINATUS LONG',frq:'10.0',gn:55,focus:.35,depth:4,bg:.3,
+  task:'Find the supraspinatus tendon',
+  hint:'An echogenic, fibrillar "bird beak" sitting right on the humeral head, under the deltoid and the bursa.',
+  success:'Supraspinatus found. That fibrillar beak is the most commonly torn rotator cuff tendon.',
+  label:'SSP',target:'ssp',
+  info:{deltoid:'That\'s the deltoid. Go a bit deeper.',bursa:'Subacromial-subdeltoid bursa: thin dark line. The tendon is right under it.',cart:'Hyaline cartilage over the humeral head. Just above that!',bone:'Humeral head cortex and its shadow. Too deep.'},
+  shapes:[skin(),B(0,1,.022,u=>tt(u)-.015,.24,{tex:'mus',id:'deltoid'}),B(0,1,u=>tt(u)-.015,tt,.04,{id:'bursa'}),B(0,1,tt,bt,.66,{tex:'fib',id:'ssp'}),
+   B(0,1,bt,u=>bt(u)+.02,.05,{id:'cart'}),B(0,1,u=>bt(u)+.02,u=>bt(u)+.036,.97,{id:'bone'}),B(0,1,u=>bt(u)+.036,1,.03,{id:'bone'})]},
+
+ {name:'Achilles',preset:'MSK Ankle',tag:'RT ACHILLES LONG',frq:'12.0',gn:54,focus:.18,depth:4,bg:.3,
+  task:'Find the Achilles tendon',
+  hint:'Thick, bright, fibrillar band just under the skin, running down to insert on the calcaneus (right side).',
+  success:'Achilles found. Near the insertion, angle the probe so the fibers stay bright and you don\'t get fooled by anisotropy.',
+  label:'ACHILLES',target:'ach',
+  info:{kager:'Kager\'s fat pad, the triangle of fat deep to the tendon.',fhl:'Flexor hallucis longus muscle. Too deep.',calc:'Calcaneus. The tendon inserts here. Come up and follow it back.'},
+  shapes:[skin(),B(0,1,.022,at,.3,{tex:'het'}),B(0,.94,at,ab,.72,{tex:'fib',id:'ach'}),B(0,1,ab,.56,.38,{tex:'het',id:'kager'}),B(0,1,.56,.82,.22,{tex:'mus',id:'fhl'}),
+   B(.8,1,cc,u=>cc(u)+.02,.97,{id:'calc'}),B(.8,1,u=>cc(u)+.02,1,.03,{id:'calc'})]},
+
+ {name:'Bonus',preset:'Love',tag:'BONUS SCAN',frq:'12.0',gn:60,focus:.42,depth:4,bg:.42,
+  task:'Find Mohamed\'s heart',
+  hint:'Anechoic, posterior enhancement, and shaped exactly how you\'d expect.',
+  success:'You found it. It was always yours.',
+  label:'♥ MOHAMED',target:'heart',
+  info:{blob:'That\'s only hypoechoic. You\'re looking for something anechoic and heart-shaped.'},
+  miss:'Not there. Keep looking. It\'s in there somewhere, and it\'s all yours.',
+  shapes:[B(0,1,0,1,.42,{tex:'het'}),skin(),E(.22,.3,.06,.035,.18,{id:'blob'}),E(.8,.7,.07,.035,.16,{id:'blob'}),E(.3,.78,.05,.03,.2,{id:'blob'}),HT(.58,.42,.13,.01,{id:'heart',enh:true,edge:true})]}
+];
+
+const cv=$('#us'),ctx=cv.getContext('2d'),cache=[];
+let done=store.get('nataly-scan',[]);if(!Array.isArray(done)||done.length!==LV.length)done=LV.map(()=>false);
+let cur=Math.max(0,done.indexOf(false));if(done.every(Boolean))cur=LV.length-1;
+let mark=null;
+const unlocked=i=>i===0||done[i-1]||done[i];
+
+function hit(L,u,v){for(let i=L.shapes.length-1;i>=0;i--){const s=L.shapes[i];if(s.id&&inside(s,u,v))return s.id}return null}
+function near(L,u,v){const r=.022;for(let k=0;k<12;k++){const t=k/12*Math.PI*2;if(hit(L,u+Math.cos(t)*r,v+Math.sin(t)*r/AR)===L.target)return true}return false}
+
+function toCanvas(g){const oc=document.createElement('canvas');oc.width=IW;oc.height=IH;const c=oc.getContext('2d'),img=c.createImageData(IW,IH),d=img.data;
+  for(let i=0;i<g.length;i++){const j=i*4,v=g[i];d[j]=v;d[j+1]=v;d[j+2]=Math.min(255,v*1.02+1);d[j+3]=255}c.putImageData(img,0,0);return oc}
+const CW=480,CH=384;
+let colorOn=false,dop=null,raf=0,lastT=0;
+const BOX={u0:.08,u1:.92,v0:.3,v1:.7};
+function prepDop(){const pts=[];for(let py=Math.floor(BOX.v0*IH);py<BOX.v1*IH;py++){const v=(py+.5)/IH;for(let px=Math.floor(BOX.u0*IW);px<BOX.u1*IW;px++){const u=(px+.5)/IW,t=dlt(u),b=dlb(u);if(v<t+.004||v>b-.004)continue;
+  const w=b-t,q=(v-(t+b)/2)/(w/2),p=Math.max(0,1-q*q);pts.push([py*IW+px,.62*(.14/w)*Math.sqrt(p),Math.exp(-(((u-.42)/.045)**2))*Math.sqrt(p)])}}
+  const oc=document.createElement('canvas');oc.width=IW;oc.height=IH;const c=oc.getContext('2d');dop={pts,oc,c,img:c.createImageData(IW,IH)}}
+function cmap(x){x=((x+1)%2+2)%2-1;const a=Math.abs(x);if(a<.06)return null;
+  if(x>0)return a<.55?[110+200*a,10+20*a,10]:[255,Math.min(235,60+330*(a-.55)),40+120*(a-.55)];
+  return a<.55?[10,30+120*a,120+240*a]:[40+180*(a-.55),Math.min(255,160+190*(a-.55)),255]}
+function pulse(t){const ph=(t/900)%1;return ph<.12?.35+.65*(ph/.12):ph<.3?1-.45*((ph-.12)/.18):.55-.2*((ph-.3)/.7)}
+function drawColor(t){if(!dop)prepDop();const d=dop.img.data;d.fill(0);const pu=pulse(t);
+  for(const [i,sb,j] of dop.pts){const c=cmap(sb*pu+j*(Math.random()-.5)*1.7*pu+(Math.random()-.5)*.05);if(!c)continue;const k=i*4;d[k]=c[0];d[k+1]=c[1];d[k+2]=c[2];d[k+3]=255}
+  dop.c.putImageData(dop.img,0,0);ctx.drawImage(dop.oc,IX,IY,IW,IH);
+  ctx.strokeStyle='rgba(230,230,220,.55)';ctx.lineWidth=.8;ctx.strokeRect(IX+BOX.u0*IW,IY+BOX.v0*IH,(BOX.u1-BOX.u0)*IW,(BOX.v1-BOX.v0)*IH);
+  const bx=454,by=40,bh=100,g=ctx.createLinearGradient(0,by,0,by+bh);g.addColorStop(0,'rgb(255,230,95)');g.addColorStop(.25,'rgb(220,21,10)');g.addColorStop(.49,'rgb(90,0,0)');g.addColorStop(.51,'rgb(0,10,90)');g.addColorStop(.75,'rgb(10,96,252)');g.addColorStop(1,'rgb(120,245,255)');
+  ctx.fillStyle=g;ctx.fillRect(bx,by,8,bh);ctx.fillStyle='#d9d9d2';ctx.font='9px "JetBrains Mono",ui-monospace,monospace';ctx.textAlign='center';ctx.fillText('+42',bx+4,by-12);ctx.fillText('-42',bx+4,by+bh+4);ctx.fillText('cm/s',bx+4,by+bh+15);ctx.textAlign='left'}
+function loop(t){raf=0;if(!(LV[cur].doppler&&colorOn)||$('#p-scan').hidden)return;if(t-lastT>33){lastT=t;draw(t)}raf=requestAnimationFrame(loop)}
+function startLoop(){if(!raf&&LV[cur]&&LV[cur].doppler&&colorOn)raf=requestAnimationFrame(loop)}
+
+function draw(t){
+  const L=LV[cur];const cf=L.doppler&&colorOn;if(!cache[cur])cache[cur]=toCanvas(render(L,1234+cur*77));
+  ctx.setTransform(2,0,0,2,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,CW,CH);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(cache[cur],IX,IY,IW,IH);if(cf)drawColor(t||performance.now());
+  const txt='#d9d9d2',dim='rgba(217,217,210,.62)',mono='"JetBrains Mono",ui-monospace,monospace';
+  ctx.textBaseline='top';ctx.font='600 9px '+mono;ctx.fillStyle=txt;ctx.textAlign='left';ctx.fillText('NATALY  ·  FINAL SEMESTER',8,7);
+  ctx.textAlign='right';ctx.fillText('MI 0.7   TIs 0.2',CW-8,7);ctx.textAlign='left';
+  ctx.font='9px '+mono;
+  const nd=new Date(),dt=String(nd.getDate()).padStart(2,'0')+'/'+String(nd.getMonth()+1).padStart(2,'0')+'/'+nd.getFullYear()+' '+String(nd.getHours()).padStart(2,'0')+':'+String(nd.getMinutes()).padStart(2,'0');
+  ctx.fillStyle=dim;ctx.textAlign='right';ctx.fillText(dt,CW-8,17);ctx.textAlign='left';
+  const lines=cf?[[L.preset,txt],['L12-5',txt],['',dim],['CF',txt],['Frq 6.3',dim],['Gn 48',dim],['PRF 3.5k',dim],['WF 87Hz',dim],['D '+L.depth.toFixed(1)+'cm',dim],['DR 60',dim],['FR 18',dim],['AO 100%',dim]]:[[L.preset,txt],['L12-5',txt],['',dim],['B',txt],['Frq '+L.frq,dim],['Gn '+L.gn,dim],['E/A 3/2',dim],['Map F',dim],['D '+L.depth.toFixed(1)+'cm',dim],['DR 60',dim],['FR 32',dim],['AO 100%',dim]];
+  lines.forEach((l,i)=>{ctx.fillStyle=l[1];ctx.fillText(l[0],8,30+i*12)});
+  const gr=ctx.createLinearGradient(0,IY+IH-120,0,IY+IH);gr.addColorStop(0,'#fff');gr.addColorStop(1,'#000');ctx.fillStyle=gr;ctx.fillRect(12,IY+IH-120,7,120);ctx.strokeStyle='rgba(217,217,210,.4)';ctx.lineWidth=.5;ctx.strokeRect(12,IY+IH-120,7,120);
+  ctx.fillStyle='#5fc7d6';ctx.beginPath();ctx.arc(IX+4,IY-6,2.6,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=txt;const n=L.depth*2,x0=IX+IW+3;
+  for(let i=0;i<=n;i++){const y=IY+Math.min(IH-1,i/n*IH),big=i%2===0;ctx.fillRect(x0,y,big?6:3,1);if(big&&i>0){ctx.fillText(String(i/2),x0+9,y-4)}}
+  if(!cf){const fy=IY+L.focus*IH;ctx.beginPath();ctx.moveTo(x0+1,fy);ctx.lineTo(x0+7,fy-4);ctx.lineTo(x0+7,fy+4);ctx.closePath();ctx.fillStyle='#e8c35a';ctx.fill()}
+  ctx.font='600 10px '+mono;ctx.fillStyle='#f0ead2';ctx.fillText(L.tag,IX+6,IY+IH-16);
+  if(mark){const x=IX+mark.u*IW,y=IY+mark.v*IH;ctx.strokeStyle=mark.ok?'#ff9cbc':'#f2c96b';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x-5,y);ctx.lineTo(x+5,y);ctx.moveTo(x,y-5);ctx.lineTo(x,y+5);ctx.stroke();
+    if(mark.ok){ctx.font='600 11px '+mono;const tw=ctx.measureText(L.label).width;let lx=x+9,ly=y-16;if(lx+tw>IX+IW-4)lx=x-9-tw;if(ly<IY+4)ly=y+9;ctx.fillStyle='#ff9cbc';ctx.fillText(L.label,lx,ly)}}
+}
+function dots(){const el=$('#dots');el.innerHTML='';LV.forEach((L,i)=>{const b=document.createElement('button');b.className='dot'+(done[i]?' done':'')+(i===cur?' cur':'');b.textContent=i===LV.length-1?'♥':String(i+1);b.title=L.name+(done[i]?' (found)':'');b.setAttribute('aria-label','Scan '+(i+1)+': '+L.name+(done[i]?', found':''));b.disabled=!unlocked(i);b.onclick=()=>load(i);el.appendChild(b)})}
+function fb(html,cls){const f=$('#feedback');f.className='feedback'+(cls?' '+cls:'');f.innerHTML=html}
+function load(i){cur=i;mark=null;colorOn=false;const L=LV[i];const cb=$('#colorBtn');cb.hidden=!L.doppler;cb.classList.remove('on');cb.textContent='Color: off';cb.setAttribute('aria-pressed','false');
+  $('#lvlTitle').textContent=(i===LV.length-1?'Bonus scan':'Scan '+(i+1)+' of '+(LV.length-1))+' · '+L.name;$('#task').textContent=L.task;$('#consoleLvl').textContent=(i+1)+'/'+LV.length;
+  $('#hint').hidden=true;$('#hint').textContent=L.hint;$('#hintBtn').textContent='Show hint';
+  if(done[i]){fb('Already found. Tap it again to see the label, or move on.','ok')}else fb('Tap the screen where you see it.');
+  setNext();dots();draw();if(LV[i+1]&&!cache[i+1])setTimeout(()=>{if(!cache[i+1])cache[i+1]=toCanvas(render(LV[i+1],1234+(i+1)*77))},400)}
+function setNext(){const nb=$('#nextBtn');nb.hidden=!done[cur];nb.textContent=cur===LV.length-1?'Open your card':'Next scan'}
+cv.addEventListener('click',e=>{const r=cv.getBoundingClientRect();const u=((e.clientX-r.left)/r.width*CW-IX)/IW,v=((e.clientY-r.top)/r.height*CH-IY)/IH;if(u<0||u>1||v<0||v>1)return;const L=LV[cur];
+  let id=hit(L,u,v);if(id!==L.target&&near(L,u,v))id=L.target;
+  if(id===L.target&&L.doppler&&!colorOn){mark={u,v,ok:false};fb('<b>Right area!</b> Now turn on <b>Color</b> so the flow proves it.','bad');draw();return}
+  if(id===L.target){const first=!done[cur];done[cur]=true;store.set('nataly-scan',done);mark={u,v,ok:true};fb('<b>'+L.success+'</b>','ok');setNext();dots();if(first&&cur===LV.length-1)setTimeout(showCard,1300)}
+  else{mark={u,v,ok:false};const m=(id&&L.info[id])||L.miss||'Just soft tissue there. Keep scanning.';fb('<b>Not that one.</b> '+m,'bad')}
+  draw()});
+$('#colorBtn').onclick=()=>{colorOn=!colorOn;const cb=$('#colorBtn');cb.classList.toggle('on',colorOn);cb.textContent='Color: '+(colorOn?'on':'off');cb.setAttribute('aria-pressed',colorOn);draw();startLoop()};
+$('#hintBtn').onclick=()=>{const h=$('#hint');h.hidden=!h.hidden;$('#hintBtn').textContent=h.hidden?'Show hint':'Hide hint'};
+$('#nextBtn').onclick=()=>{if(cur===LV.length-1)showCard();else load(cur+1)};
+function showCard(){$('#cardEyebrow').textContent='Scan complete · '+LV.length+' of '+LV.length+' found';$('#card').hidden=false;$('#cardReport').focus()}
+function openReport(){$('#repDate').textContent=new Date().toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});document.querySelectorAll('.overlay').forEach(o=>o.hidden=true);$('#report').hidden=false;$('#repClose').focus()}
+$('#cardReport').onclick=openReport;$('#repClose').onclick=()=>{$('#report').hidden=true};
+$('#cardClose').onclick=()=>{$('#card').hidden=true};
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.hidden=true}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay').forEach(o=>o.hidden=true)});
+$('#cardReset').onclick=()=>{done=LV.map(()=>false);store.set('nataly-scan',done);cache.length=0;$('#card').hidden=true;load(0)};
+
+/* ---------- countdown ---------- */
+const NOTES=[
+ "First note of the countdown. You're closer than you think, Nataly.",
+ "Reminder: you're the smartest person I know. Don't argue.",
+ "Drink water. Eat something. Then go be brilliant.",
+ "Every hard exam is one less hard exam. Proud of you.",
+ "If today felt heavy, that's okay. You still showed up, and that counts.",
+ "Your future patients are lucky. They just don't know it yet.",
+ "Me: what?\nYou: teezak b5at.\nStill my favorite conversation.",
+ "You can find a tiny lesion on a gray screen. You can definitely get through this week.",
+ "I love how excited you get about anatomy. Never lose that.",
+ "Take a break when you need one. I'll still be proud of you after it.",
+ "One day you'll be the sonographer everyone wants to train with.",
+ "Your hard work isn't invisible. I see it.",
+ "Quick check: shoulders down, deep breath. Okay, carry on.",
+ "Nataly, the sonographer. Get used to how good that sounds.",
+ "Whatever today's result is, I'm on your team.",
+ "You've already done the hardest part: not giving up.",
+ "I'm counting down with you. Every single day.",
+ "Small wins count. Tell me one from today.",
+ "You make hard things look easy. I know they're not.",
+ "Proud of you yesterday, proud of you today, proud of you tomorrow.",
+ "Tired? Rest. Stressed? Call me. Hungry? I'm buying.",
+ "The finish line is starting to look real.",
+ "Thank you for letting me be part of this journey.",
+ "Scan, study, sleep, repeat. And sometimes, let me take you out.",
+ "You're not behind. You're exactly where you need to be.",
+ "I believe in you more than you believe in yourself. Borrow some.",
+ "Another day down. Look how far you've come.",
+ "Big day or small day, you're doing amazing.",
+ "When you graduate, we celebrate. That's already decided.",
+ "Love you. That's the note."
+];
+const START=new Date(2026,8,1),NOTE0=new Date(2026,10,10);
+const dIn=$('#cdDate');dIn.value=store.get('nataly-cd-date','2027-05-31');
+dIn.addEventListener('change',()=>{if(dIn.value){store.set('nataly-cd-date',dIn.value);tick()}});
+function target(){const p=(dIn.value||'2027-05-31').split('-').map(Number);return new Date(p[0],p[1]-1,p[2],17,0,0)}
+function tick(){const now=new Date(),T=target();let ms=T-now;
+  if(ms<=0){$('#cdLabel').textContent='You did it, Nataly!';['#cdD','#cdH','#cdM','#cdS'].forEach(s=>$(s).textContent='0')}
+  else{$('#cdLabel').textContent='Until the final semester is done';const s=Math.floor(ms/1000);$('#cdD').textContent=Math.floor(s/86400);$('#cdH').textContent=Math.floor(s%86400/3600);$('#cdM').textContent=String(Math.floor(s%3600/60)).padStart(2,'0');$('#cdS').textContent=String(s%60).padStart(2,'0')}
+  const pct=Math.max(0,Math.min(100,(now-START)/(T-START)*100));$('#pct').textContent=Math.floor(pct)+'% done';$('#barFill').style.width=pct+'%'}
+function note(){const t=new Date();t.setHours(0,0,0,0);const n=Math.max(0,Math.round((t-NOTE0)/864e5));$('#noteLabel').textContent='Note #'+(n+1)+' · '+t.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long'});const q=$('#noteText');q.innerHTML='';NOTES[n%NOTES.length].split('\n').forEach((l,i)=>{if(i)q.appendChild(document.createElement('br'));q.appendChild(document.createTextNode(l))})}
+function confetti(ms){ms=ms||6500;if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const c=$('#confetti');c.hidden=false;const x=c.getContext('2d'),dpr=Math.min(2,window.devicePixelRatio||1),w=innerWidth,h=innerHeight;c.width=w*dpr;c.height=h*dpr;x.setTransform(dpr,0,0,dpr,0,0);
+  const cols=['#ff9cbc','#f2c96b','#ffffff','#c2386a','#86dcae'];const P=Array.from({length:170},()=>({x:Math.random()*w,y:-20-Math.random()*h*.7,vx:(Math.random()-.5)*2.2,vy:2+Math.random()*3,r:Math.random()*6.28,vr:(Math.random()-.5)*.25,s:5+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0=performance.now();(function f(t){x.clearRect(0,0,w,h);for(const p of P){p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;p.vy+=.015;x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);x.restore()}if(t-t0<ms)requestAnimationFrame(f);else{x.clearRect(0,0,w,h);c.hidden=true}})(t0)}
+function isGrad(){return new Date()>=target()||location.hash==='#celebrate'}
+function openGrad(){document.querySelectorAll('.overlay').forEach(o=>o.hidden=true);$('#grad').hidden=false;$('#gradReport').focus();confetti()}
+function gradCheck(){const g=isGrad();$('#gradBanner').hidden=!g;if(!g)return;if(location.hash==='#celebrate')openGrad();else if(!store.get('nataly-grad-seen',false)){store.set('nataly-grad-seen',true);openGrad()}}
+$('#bannerOpen').onclick=openGrad;$('#gradClose').onclick=()=>{$('#grad').hidden=true};$('#gradReport').onclick=openReport;
+dIn.addEventListener('change',gradCheck);
+let wasGrad=new Date()>=target();setInterval(()=>{const g=new Date()>=target();if(g&&!wasGrad)gradCheck();wasGrad=g},5000);
+tick();note();setInterval(tick,1000);
+
+/* ---------- checklist ---------- */
+const TODO_DEF=['MSK final exam','Vascular final exam','Small parts final exam','Thyroid competency','Carotid duplex competency','Breast competency','Scrotal competency','Shoulder competency','Clinical hours signed off','Case study presentation','Registry exam prep','Graduation!'];
+let todos=store.get('nataly-todo',null);if(!Array.isArray(todos))todos=TODO_DEF.map(t=>({t,d:false}));
+const REW=['Proud of you. One less thing!','Mohamed owes you a coffee for that one.','Look at you go.','Another one down, sonographer.','That deserves a snack.','Officially unstoppable.','Done. You\'re amazing.','Closer every day.'];
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{t.hidden=true},2800)}
+function saveT(){store.set('nataly-todo',todos)}
+function renderTodos(focusId){const ul=$('#todoList');ul.innerHTML='';todos.forEach((it,i)=>{const li=document.createElement('li');li.className='todo-item'+(it.d?' done':'');
+  const tk=document.createElement('button');tk.className='tick';tk.id='todo-'+i;tk.textContent='✓';tk.setAttribute('aria-pressed',it.d);tk.setAttribute('aria-label',(it.d?'Mark not done: ':'Mark done: ')+it.t);
+  tk.onclick=()=>{it.d=!it.d;saveT();renderTodos('todo-'+i);if(it.d){const n=todos.filter(x=>x.d).length;if(n===todos.length){toast('Everything is done. Mohamed is so proud of you.');confetti(4500)}else toast(REW[Math.floor(Math.random()*REW.length)])}};
+  const sp=document.createElement('span');sp.className='tt';sp.textContent=it.t;
+  const del=document.createElement('button');del.className='del';del.textContent='×';del.setAttribute('aria-label','Remove '+it.t);del.onclick=()=>{todos.splice(i,1);saveT();renderTodos()};
+  li.append(tk,sp,del);ul.appendChild(li)});
+  const n=todos.filter(x=>x.d).length;$('#todoCount').textContent=n+' of '+todos.length+' done';$('#todoBar').style.width=(todos.length?n/todos.length*100:0)+'%';
+  $('#coffees').textContent=n?('Rewards earned: '+n+' coffee'+(n>1?'s':'')+' from Mohamed.'):'Every item you tick earns you a coffee from Mohamed.';
+  if(focusId){const f=document.getElementById(focusId);if(f)f.focus()}}
+$('#todoForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#todoInput').value.trim();if(!v)return;todos.push({t:v,d:false});saveT();$('#todoInput').value='';renderTodos()});
+renderTodos();
+
+/* ---------- study ---------- */
+const Q=[
+ ['Vascular','Which spectral waveform is normal for the internal carotid artery?',['Low resistance, with forward flow all through diastole','High resistance and triphasic','No diastolic flow at all','Reversed flow in diastole'],'The ICA feeds the brain, a low-resistance bed, so flow keeps going forward through diastole.'],
+ ['Vascular','A normal resting common femoral artery waveform is usually:',['Triphasic, high resistance','Monophasic, low resistance','Continuous with no pulsatility','Biphasic with reversed systolic flow'],'Resting leg muscles are a high-resistance bed, which gives the classic triphasic waveform.'],
+ ['Vascular','How do you tell the ECA from the ICA?',['The ECA has branches in the neck','The ECA is always larger','The ECA has more diastolic flow','The ECA is always posterior'],'Branches in the neck (like the superior thyroid artery) mean ECA. Temporal tapping also shows up in its waveform.'],
+ ['Vascular','For velocity measurements, the Doppler angle should be:',['60° or less','Exactly 90°','Over 70°','It doesn\'t matter'],'Near 90° the cosine heads to zero and velocity errors get huge. Keep it at 60° or less, and keep it consistent.'],
+ ['Vascular','Per the SRU consensus criteria, an ICA PSV above about 230 cm/s suggests:',['70% or greater stenosis','A normal vessel','Under 50% stenosis','Total occlusion'],'SRU: under 125 cm/s is under 50%, 125–230 is 50–69%, and over 230 suggests 70% or more (near-occlusion aside).'],
+ ['Vascular','The primary sonographic sign of acute DVT is:',['The vein doesn\'t fully compress','Increased phasicity','A bigger artery next to it','Bright echogenic vein walls'],'Non-compressibility in transverse is the main criterion. Acute clot can be almost anechoic, so always compress.'],
+ ['Vascular','Reversed flow in a vertebral artery suggests:',['Subclavian steal','ICA dissection','Normal flow','DVT'],'A proximal subclavian stenosis lets the arm steal blood backward down the vertebral artery on the same side.'],
+ ['Vascular','You see color aliasing in a normal-looking vessel. A good first fix is:',['Increase the color scale (PRF)','Increase the color gain','Set the wall filter to zero','Switch to a higher-frequency probe'],'Aliasing happens when the Doppler shift passes the Nyquist limit. Raising the scale or shifting the baseline usually fixes it.'],
+ ['Small parts','Normal thyroid tissue is usually:',['Homogeneous and brighter than the strap muscles','Anechoic','Darker than the strap muscles','Coarse and calcified'],'Normal thyroid has a fine, ground-glass texture that\'s hyperechoic relative to the strap muscles.'],
+ ['Small parts','A large comet-tail artifact inside a thyroid nodule usually means:',['Colloid, which is benign','Microcalcifications','Lymph node metastasis','Active bleeding'],'Comet tails come from inspissated colloid. Don\'t confuse them with punctate echogenic foci, which are suspicious.'],
+ ['Small parts','Which feature is most suspicious in a thyroid nodule?',['Taller-than-wide on transverse','Spongiform appearance','Purely cystic','Smooth margins with a thin halo'],'Taller-than-wide earns 3 points in ACR TI-RADS. Spongiform and purely cystic nodules score 0.'],
+ ['Small parts','A simple breast cyst should be:',['Anechoic, circumscribed, with posterior enhancement','Hypoechoic with an echogenic halo','Irregular with posterior shadowing','Solid with internal flow'],'Meet every criterion and it\'s BI-RADS 2, benign. Miss one and it isn\'t a simple cyst.'],
+ ['Small parts','BI-RADS 3 means:',['Probably benign, short-interval follow-up','Negative','Suspicious, biopsy','Known malignancy'],'BI-RADS 3 carries under a 2% chance of malignancy and is usually followed up in about 6 months.'],
+ ['Small parts','Acute scrotal pain with absent intratesticular flow, compared with the other side, is most concerning for:',['Testicular torsion','Epididymitis','Varicocele','Spermatocele'],'Torsion is a surgical emergency. Always compare with the other side using the same settings.'],
+ ['Small parts','Why are varicoceles more common on the left?',['The left testicular vein enters the left renal vein at a right angle','The left testis is larger','The left vein drains straight into the IVC','The left artery is longer'],'The right testicular vein drains obliquely into the IVC. The left meets the renal vein at a right angle, so pressure is higher.'],
+ ['Small parts','A typical parathyroid adenoma looks like:',['A hypoechoic oval nodule posterior to the thyroid','A bright calcified mass inside the thyroid','An anechoic cyst in front of the trachea','A lymph node with a fatty hilum'],'Look behind the thyroid for a hypoechoic oval. A polar feeding vessel on Doppler helps confirm it.'],
+ ['MSK','A tendon looks hypoechoic only when the beam isn\'t perpendicular. That\'s:',['Anisotropy','Reverberation','Mirror image','Posterior enhancement'],'Heel-toe the probe so the beam hits the fibers at 90° and the tendon goes bright again. Don\'t call a tear on anisotropy.'],
+ ['MSK','A normal tendon in long axis appears:',['Hyperechoic with a fibrillar pattern','Anechoic and round','Honeycomb-like','Hypoechoic and heterogeneous'],'Tightly packed parallel collagen fibers make the bright fibrillar lines.'],
+ ['MSK','A normal peripheral nerve in short axis has which pattern?',['Honeycomb (fascicular)','Fibrillar','Target with an anechoic center','Spoke-wheel'],'Hypoechoic fascicles surrounded by echogenic connective tissue give the honeycomb look.'],
+ ['MSK','The most commonly torn rotator cuff tendon is:',['Supraspinatus','Subscapularis','Teres minor','Infraspinatus'],'Tears usually start near its footprint on the greater tuberosity, just behind the biceps tendon.'],
+ ['MSK','A Baker cyst sits between:',['The medial head of gastrocnemius and the semimembranosus tendon','The patella and the quadriceps tendon','The lateral head of gastrocnemius and biceps femoris','The tibia and fibula'],'Seeing its neck between these two structures confirms a Baker cyst.'],
+ ['MSK','Plantar fasciitis is suggested when the fascia is thicker than about:',['4 mm','1 mm','10 mm','20 mm'],'Over about 4 mm at the calcaneal insertion, often hypoechoic, supports plantar fasciitis.'],
+ ['MSK','A ganglion cyst is typically:',['Anechoic to hypoechoic, often lobulated, with no internal flow','Hyperechoic with internal flow','A solid mass with calcifications','A fibrillar band'],'Look for a neck connecting it to the joint or tendon sheath. No internal vascularity.'],
+ ['MSK','At the carpal tunnel inlet, a median nerve area often used as the cutoff for carpal tunnel syndrome is:',['About 10–12 mm²','About 2–3 mm²','About 25–30 mm²','About 50 mm²'],'Measure at the pisiform level, tracing just inside the echogenic rim. Exact cutoffs vary a little between studies.']
+];
+const CHEERS=['Correct! Mohamed is very impressed.','Look at you go.','Smart and beautiful. Unfair.','Exactly right. Sonographer energy.','Nailed it.','That\'s my girl.','Too easy for you, huh?','Correct. Your brain is my favorite.'];
+const TOPICS=['All','Vascular','Small parts','MSK'];
+let topic='All',deck=[],qi=0,right=0,total=0;
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function chips(){const el=$('#chips');el.innerHTML='';TOPICS.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.setAttribute('aria-pressed',t===topic);b.onclick=()=>{topic=t;newDeck();chips()};el.appendChild(b)})}
+function newDeck(){deck=shuffle(Q.filter(q=>topic==='All'||q[0]===topic));qi=0;showQ()}
+function showQ(){if(qi>=deck.length){deck=shuffle(deck);qi=0}const q=deck[qi];
+  $('#qTopic').textContent=q[0];$('#qText').textContent=q[1];$('#score').textContent=right+' / '+total+' this session';
+  const ex=$('#explain');ex.hidden=true;ex.innerHTML='';$('#qNext').hidden=true;
+  const opts=$('#opts');opts.innerHTML='';const order=shuffle([0,1,2,3]);
+  order.forEach((oi,k)=>{const b=document.createElement('button');b.className='opt';b.innerHTML='<span class="k">'+'ABCD'[k]+'</span><span></span>';b.lastChild.textContent=q[2][oi];b.dataset.oi=oi;
+    b.onclick=()=>{total++;const ok=oi===0;if(ok)right++;opts.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if(x.dataset.oi==='0')x.classList.add('right')});if(!ok)b.classList.add('wrong');
+      const c=document.createElement('span');c.className='cheer';c.textContent=ok?CHEERS[Math.floor(Math.random()*CHEERS.length)]:'Almost. You\'ll get it next time.';
+      const p=document.createElement('p');p.textContent=q[3];ex.append(c,p);ex.hidden=false;$('#qNext').hidden=false;$('#score').textContent=right+' / '+total+' this session';$('#qNext').focus()};
+    opts.appendChild(b)})}
+$('#qNext').onclick=()=>{qi++;showQ()};
+chips();newDeck();
+
+/* ---------- start ---------- */
+load(cur);
+showTab(location.hash.slice(1));
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
+})();
+</script>
+</body>
+</html>
