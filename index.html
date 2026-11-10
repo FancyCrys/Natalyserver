@@ -196,6 +196,22 @@ p{margin:0}
 .chip-s.new{border-color:var(--pink);color:var(--pink)}
 @media (max-width:460px){.wl-head,.wl-row{grid-template-columns:minmax(0,1fr) auto}.wl-id{display:none}.wl-head span:first-child{display:none}}
 .home .note blockquote{font-size:clamp(24px,4vw,30px)}
+/* study modes */
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;align-self:flex-start}
+.seg button{background:transparent;border:0;border-radius:7px;padding:8px 14px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+.seg button[aria-selected="true"]{background:var(--panel2);color:var(--fg);box-shadow:inset 0 -2px 0 var(--pink)}
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;text-align:center;border:1.5px dashed var(--line);border-radius:12px;padding:26px 16px;cursor:pointer;background:var(--screen)}
+.drop:hover,.drop.over{border-color:var(--pink)}
+.drop strong{color:var(--pink)}
+.study textarea{width:100%;background:var(--screen);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical;font-size:14px;margin-top:8px}
+.study select{background:var(--screen);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.study summary{cursor:pointer;color:var(--muted);font-size:14px}
+.status{font-size:14px;min-height:1.4em;color:var(--muted)}
+.status.err{color:var(--bad)}
+.status.ok{color:var(--ok)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--pink);border-radius:50%;animation:sp 0.8s linear infinite;vertical-align:-1px;margin-right:8px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
 /* lock */
 .lock{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;overflow-y:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .lock-box{margin:auto;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
@@ -317,8 +333,24 @@ p{margin:0}
   <!-- STUDY -->
   <section id="p-study" role="tabpanel" aria-labelledby="t-study" hidden>
     <div class="study">
+      <div class="seg" role="tablist" aria-label="Study mode">
+        <button role="tab" id="m-practice" aria-selected="true">Practice set</button>
+        <button role="tab" id="m-notes" aria-selected="false">From my notes</button>
+      </div>
       <div class="chips" id="chips"></div>
-      <div class="panel">
+      <div id="notesBox" hidden>
+        <div class="panel">
+          <p class="eyebrow">Make a quiz from your notes</p>
+          <p class="small">Upload lecture slides, notes, a protocol, or photos of pages. The AI reads them and writes practice questions just for you. You can pick several files at once.</p>
+          <label class="drop" for="noteFile" id="drop"><strong>Choose files</strong><span>or drop them here</span><span class="small">PowerPoint, Word, PDF, text, or photos</span></label>
+          <input type="file" id="noteFile" accept=".pdf,.docx,.pptx,.txt,.md,.csv,.rtf,image/*" multiple class="sr">
+          <p class="small" id="fileInfo"></p>
+          <details><summary>Or paste text instead</summary><label for="notePaste" class="sr">Pasted notes</label><textarea id="notePaste" rows="6" placeholder="Paste your notes here"></textarea></details>
+          <div class="row" style="align-items:center"><label for="qCount" class="small">Questions</label><select id="qCount"><option>5</option><option selected>10</option><option>15</option></select><button class="btn primary" id="makeQuiz">Make my quiz</button><button class="btn" id="redoSaved" hidden>Retake last notes quiz</button></div>
+          <p class="status" id="genStatus" aria-live="polite"></p>
+        </div>
+      </div>
+      <div class="panel" id="quizPanel">
         <div class="qhead"><p class="eyebrow" id="qTopic"></p><span class="score" id="score"></span></div>
         <p class="q" id="qText"></p>
         <div class="opts" id="opts"></div>
@@ -737,7 +769,7 @@ function renderHome(){const now=new Date(),h=now.getHours();
   const rows=[
    ['US-001','Scan game','Find '+LV.length+' structures on real-looking scans',all?['Complete','done']:found?[found+' of '+LV.length+' found','go']:['Start here','new'],()=>go('scan')],
    ['US-002','Countdown','Days to the finish line, plus a new note daily',[days>0?days+' days left':'Done!','go'],()=>go('countdown')],
-   ['US-003','Study mode',Q.length+' questions: vascular, small parts, MSK',['Ready','go'],()=>go('study')],
+   ['US-003','Study mode','Practice set, or a quiz made from your notes',['Ready','go'],()=>go('study')],
    ['US-004','Checklist','Exams and comps to tick off',[td+' of '+todos.length+' done',td===todos.length&&todos.length?'done':'go'],()=>go('checklist')],
    ['US-005','Your report','Official findings, signed by Mohamed',all?['Ready to read','done']:['After the scans',''],all?openReport:null]
   ];
@@ -777,7 +809,51 @@ const TOPICS=['All','Vascular','Small parts','MSK'];
 let topic='All',deck=[],qi=0,right=0,total=0;
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function chips(){const el=$('#chips');el.innerHTML='';TOPICS.forEach(t=>{const b=document.createElement('button');b.className='chip';b.textContent=t;b.setAttribute('aria-pressed',t===topic);b.onclick=()=>{topic=t;newDeck();chips()};el.appendChild(b)})}
-function newDeck(){deck=shuffle(Q.filter(q=>topic==='All'||q[0]===topic));qi=0;showQ()}
+function newDeck(){startDeck(Q.filter(q=>topic==='All'||q[0]===topic))}
+function startDeck(arr){deck=shuffle(arr);qi=0;$('#quizPanel').hidden=false;showQ()}
+/* study modes */
+let mode='practice',genDeck=store.get('nataly-gen',null),pending={text:'',images:[],name:''};
+function setMode(m){mode=m;$('#m-practice').setAttribute('aria-selected',m==='practice');$('#m-notes').setAttribute('aria-selected',m==='notes');
+  $('#chips').hidden=m!=='practice';$('#notesBox').hidden=m!=='notes';$('#redoSaved').hidden=!(genDeck&&genDeck.length);
+  if(m==='practice')newDeck();else $('#quizPanel').hidden=true}
+$('#m-practice').onclick=()=>setMode('practice');$('#m-notes').onclick=()=>setMode('notes');
+function loadScript(src){return new Promise((res,rej)=>{if(document.querySelector('script[src="'+src+'"]'))return res();const el=document.createElement('script');el.src=src;el.onload=()=>res();el.onerror=()=>rej(new Error('Couldn’t load the file reader. Check your connection and try again.'));document.head.appendChild(el)})}
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js',PDFW='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js',MAMMOTH='https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js',JSZIP='https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+async function pdfText(f){await loadScript(PDFJS);const lib=window.pdfjsLib;lib.GlobalWorkerOptions.workerSrc=PDFW;const doc=await lib.getDocument({data:await f.arrayBuffer()}).promise;let out='';for(let i=1;i<=doc.numPages;i++){const pg=await doc.getPage(i);const tc=await pg.getTextContent();out+=tc.items.map(x=>x.str).join(' ')+'\n'}return out}
+async function docxText(f){await loadScript(MAMMOTH);const r=await window.mammoth.extractRawText({arrayBuffer:await f.arrayBuffer()});return r.value}
+async function pptxText(f){await loadScript(JSZIP);const zip=await window.JSZip.loadAsync(await f.arrayBuffer());const num=n=>parseInt(n.match(/(\d+)\.xml$/)[1],10);
+  const slides=Object.keys(zip.files).filter(n=>/^ppt\/slides\/slide\d+\.xml$/.test(n)).sort((a,b)=>num(a)-num(b));let out='';
+  const grab=x=>{const d=new DOMParser().parseFromString(x,'application/xml');return [...d.getElementsByTagNameNS('*','p')].map(p=>[...p.getElementsByTagNameNS('*','t')].map(t=>t.textContent).join('')).filter(Boolean).join('\n')};
+  for(const n of slides){out+='Slide '+num(n)+':\n'+grab(await zip.file(n).async('string'))+'\n';const nn='ppt/notesSlides/notesSlide'+num(n)+'.xml';if(zip.file(nn)){const t=grab(await zip.file(nn).async('string')).replace(/^\d+$/gm,'').trim();if(t)out+='Speaker notes: '+t+'\n'}out+='\n'}
+  return out}
+function imgData(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const k=Math.min(1,1600/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL('image/jpeg',.82))};im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Couldn’t open '+f.name+'. Try a JPG or PNG photo.'))};im.src=u})}
+function gst(html,cls){const g=$('#genStatus');g.className='status'+(cls?' '+cls:'');g.innerHTML=html}
+async function readFiles(files){files=[...files];if(!files.length)return;pending={text:'',images:[],name:files.map(f=>f.name).join(', ')};gst('<span class="spin"></span>Reading '+files.length+(files.length>1?' files':' file')+'…');
+  try{for(const f of files){const n=f.name.toLowerCase();
+      if(f.type.startsWith('image/')){if(pending.images.length<4)pending.images.push(await imgData(f))}
+      else if(n.endsWith('.pdf'))pending.text+=await pdfText(f)+'\n';
+      else if(n.endsWith('.docx'))pending.text+=await docxText(f)+'\n';
+      else if(n.endsWith('.pptx'))pending.text+=await pptxText(f)+'\n';
+      else if(/\.(txt|md|csv|rtf)$/.test(n))pending.text+=await f.text()+'\n';
+      else if(/\.(ppt|doc)$/.test(n))throw new Error(f.name+' is an old Office format. Open it and save it as .pptx or .docx, or export it as PDF, then try again.');
+      else throw new Error('I can’t read '+f.name+'. Use PowerPoint, Word, PDF, text, or photos.')}
+    const chars=pending.text.trim().length;const parts=[];if(chars)parts.push(chars.toLocaleString()+' characters of text');if(pending.images.length)parts.push(pending.images.length+' photo'+(pending.images.length>1?'s':''));
+    $('#fileInfo').textContent=pending.name+(parts.length?' · '+parts.join(' and '):'');
+    if(!chars&&!pending.images.length)gst('That file has no readable text. If it’s a scanned PDF, take photos of the pages instead.','err');else gst('Ready. Pick how many questions and tap Make my quiz.')}
+  catch(err){gst(err.message||'Couldn’t read that file.','err')}}
+$('#noteFile').addEventListener('change',e=>{readFiles(e.target.files);e.target.value=''});
+const drop=$('#drop');['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));drop.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files)readFiles(e.dataTransfer.files)});
+$('#makeQuiz').onclick=async()=>{const text=(pending.text+'\n'+$('#notePaste').value).trim();if(text.length<200&&!pending.images.length){gst('Add a file or paste some notes first (at least a paragraph).','err');return}
+  const btn=$('#makeQuiz');btn.disabled=true;gst('<span class="spin"></span>Writing your questions. This takes about 20 to 40 seconds…');
+  try{const r=await fetch('/api/quiz',{method:'POST',headers:{'content-type':'application/json','x-nataly-pass':store.get('nataly-pass','teezakb5at')},body:JSON.stringify({text:text.slice(0,60000),images:pending.images,count:+$('#qCount').value})});
+    if(r.status===404||r.status===405)throw new Error('The quiz maker only works on the live website, not in this preview.');
+    let data={};try{data=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(data.error||'The quiz maker had a problem ('+r.status+'). Try again.');
+    genDeck=data.questions.map(q=>[q.topic,q.question,[q.correct].concat(q.wrong),q.explanation]);store.set('nataly-gen',genDeck);$('#redoSaved').hidden=false;
+    gst('Done! '+genDeck.length+' questions from your notes.','ok');startDeck(genDeck);$('#quizPanel').scrollIntoView({behavior:'smooth',block:'start'})}
+  catch(err){gst(err.message||'Something went wrong. Try again.','err')}
+  finally{btn.disabled=false}};
+$('#redoSaved').onclick=()=>{if(genDeck&&genDeck.length){gst('');startDeck(genDeck)}};
 function showQ(){if(qi>=deck.length){deck=shuffle(deck);qi=0}const q=deck[qi];
   $('#qTopic').textContent=q[0];$('#qText').textContent=q[1];$('#score').textContent=right+' / '+total+' this session';
   const ex=$('#explain');ex.hidden=true;ex.innerHTML='';$('#qNext').hidden=true;
@@ -798,7 +874,7 @@ const okAns=a=>{const n=a.toLowerCase().replace(/[^a-z0-9]/g,'');return /^t[ie]+
 let tries=0;
 function unlock(){$('#lock').hidden=true;store.set('nataly-unlocked',true);gradCheck();draw()}
 if(store.get('nataly-unlocked',false))unlock();else setTimeout(()=>{try{$('#lockInput').focus()}catch(e){}},50);
-$('#lockForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#lockInput').value;if(okAns(v)){unlock();return}
+$('#lockForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#lockInput').value;if(okAns(v)){store.set('nataly-pass',v);unlock();return}
   tries++;const lk=$('#lock');lk.classList.remove('shake');void lk.offsetWidth;lk.classList.add('shake');
   $('#lockMsg').textContent=tries<2?'Not quite. Try again.':tries<4?'Hint: two words. It starts with "t".':'Hint: teez... (you know the rest)';});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);
