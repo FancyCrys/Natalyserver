@@ -21,9 +21,10 @@ If the Vercel domain isn't `natalyserver.vercel.app`, update the `og:image` and 
 
 ## Turn on the AI quiz maker
 
-1. Get an API key at https://console.anthropic.com (add a few dollars of credit).
-2. In Vercel, open the project → **Settings → Environment Variables**.
-3. Add `ANTHROPIC_API_KEY` with your key, for all environments.
-4. Redeploy (Deployments → ⋯ → Redeploy) so the function picks it up.
+The quiz maker works with an OpenAI key (preferred if set) or a Claude key.
 
-Optional: set `QUIZ_MODEL` to use a different Claude model (default `claude-sonnet-5-5`).
+1. In Vercel, open the project → **Settings → Environment Variables**.
+2. Add `OPENAI_API_KEY` with your OpenAI key (or `ANTHROPIC_API_KEY` for Claude), for all environments.
+3. Redeploy (Deployments → ⋯ → Redeploy) so the function picks it up.
+
+Optional: `OPENAI_MODEL` picks a specific OpenAI model. By default it tries `gpt-5.4-mini`, then `gpt-5-mini`, then `gpt-4.1-mini`, using the first one your account can access. `CLAUDE_MODEL` does the same for Claude (default `claude-sonnet-5-5`).
