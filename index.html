@@ -4,6 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0e1116">
+<meta name="description" content="Something from Mohamed for your final semester.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="For Nataly">
+<meta property="og:description" content="Something from Mohamed for your final semester.">
+<meta property="og:image" content="https://natalyserver.vercel.app/preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://natalyserver.vercel.app/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://natalyserver.vercel.app/preview.png">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Nataly">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>For Nataly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -159,9 +172,38 @@ p{margin:0}
 .report .small{color:var(--rep-muted)}
 .report .btn{background:#fff;border-color:var(--rep-line);color:var(--rep-ink)}
 .report .btn.primary{background:var(--rep-accent);border-color:var(--rep-accent);color:#fff}
+
+/* lock */
+.lock{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;overflow-y:auto;padding-block:max(24px,env(safe-area-inset-top,0px)) max(24px,env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.lock-box{margin:auto;max-width:420px;width:100%;display:flex;flex-direction:column;gap:16px}
+.lock-screen{background:var(--screen);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:6px;font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.06em}
+.lock-screen b{color:var(--amber);font-weight:600}
+.lock h1{font-size:clamp(28px,8vw,38px)}
+.lock-q{font-size:17px}
+.lock-q q{color:var(--pink);quotes:"\201C" "\201D"}
+.lock form{display:flex;flex-direction:column;gap:10px}
+.lock input{background:var(--screen);border:1px solid var(--line);border-radius:10px;padding:12px 14px;font-size:16px}
+.lock input:focus{border-color:var(--pink);outline:none}
+.lock-msg{min-height:1.5em;font-size:14px;color:var(--bad)}
+.lock.shake .lock-box{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.lock.shake .lock-box{animation:none}}
 </style>
 </head>
 <body>
+<div class="lock" id="lock">
+  <div class="lock-box">
+    <div class="lock-screen"><span><b>PATIENT LOGIN</b></span><span>Probe: L12-5 · Preset: Nataly only</span></div>
+    <h1>This one's for <em style="font-style:normal;color:var(--pink)">Nataly</em>.</h1>
+    <p class="lock-q">Mohamed says <q>what?</q><br>What do you say back?</p>
+    <form id="lockForm">
+      <label for="lockInput" class="sr">Your answer</label>
+      <input id="lockInput" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Type your answer">
+      <button class="btn primary" type="submit">Open</button>
+      <p class="lock-msg" id="lockMsg" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
 <div class="wrap">
   <div class="banner" id="gradBanner" hidden><span>Nataly did it. The final semester is done!</span><button class="btn primary" id="bannerOpen">Celebrate</button></div>
   <header>
@@ -333,7 +375,14 @@ const TABS=['scan','countdown','study','checklist'];
 function showTab(t){if(!TABS.includes(t))t='scan';TABS.forEach(x=>{$('#p-'+x).hidden=x!==t;$('#t-'+x).setAttribute('aria-selected',x===t)});if(t==='scan'){draw();startLoop()}}
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.tab;showTab(b.dataset.tab)}));
 window.addEventListener('hashchange',()=>{showTab(location.hash.slice(1));
-gradCheck();if(location.hash==='#celebrate')gradCheck()});
+/* ---------- lock ---------- */
+const okAns=a=>{const n=a.toLowerCase().replace(/[^a-z0-9]/g,'');return /^t[ie]+[sz]+a*k+b+(5|kh|k|h)a+t+$/.test(n)};
+let tries=0;
+function unlock(){$('#lock').hidden=true;store.set('nataly-unlocked',true);gradCheck();draw()}
+if(store.get('nataly-unlocked',false))unlock();else setTimeout(()=>{try{$('#lockInput').focus()}catch(e){}},50);
+$('#lockForm').addEventListener('submit',e=>{e.preventDefault();const v=$('#lockInput').value;if(okAns(v)){unlock();return}
+  tries++;const lk=$('#lock');lk.classList.remove('shake');void lk.offsetWidth;lk.classList.add('shake');
+  $('#lockMsg').textContent=tries<2?'Not quite. Try again.':tries<4?'Hint: two words. It starts with "t".':'Hint: teez... (you know the rest)';});if(location.hash==='#celebrate')gradCheck()});
 
 /* ---------- ultrasound engine ---------- */
 const IX=70,IY=24,IW=340,IH=340,AR=IH/IW;
